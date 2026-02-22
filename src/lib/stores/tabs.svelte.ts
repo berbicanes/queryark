@@ -22,6 +22,18 @@ class TabStore {
       }
     }
 
+    // Check for existing document/keyvalue/graph tab with same connection+container+item
+    if (tab.type === 'document' || tab.type === 'keyvalue' || tab.type === 'graph') {
+      const existing = this.tabs.find(
+        t => t.type === tab.type && t.connectionId === tab.connectionId &&
+             t.container === tab.container && t.item === tab.item
+      );
+      if (existing) {
+        this.activeTabId = existing.id;
+        return existing.id;
+      }
+    }
+
     const id = uuidv4();
     const newTab: Tab = { ...tab, id };
     this.tabs.push(newTab);

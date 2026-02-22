@@ -24,7 +24,7 @@
   let containerEl: HTMLDivElement;
 
   // Determine the SQL dialect from the connection
-  let dialect = $derived.by<'PostgreSQL' | 'MySQL'>(() => {
+  let dialect = $derived.by(() => {
     const conn = connectionStore.connections.find(c => c.config.id === tab.connectionId);
     return conn?.config.db_type ?? 'PostgreSQL';
   });

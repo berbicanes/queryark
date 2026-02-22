@@ -2,6 +2,7 @@
   import { connectionStore } from '$lib/stores/connections.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
   import * as connectionService from '$lib/services/connectionService';
+  import { DB_METADATA } from '$lib/types/database';
   import type { ConnectionState } from '$lib/types/connection';
 
   let contextMenu = $state<{ x: number; y: number; connection: ConnectionState } | null>(null);
@@ -43,8 +44,6 @@
 
   function ctxEdit() {
     if (contextMenu) {
-      // Set the editing connection in the uiStore then open modal
-      // We store the edit connection in a module-level variable since uiStore doesn't have editConnection
       editingConnectionId = contextMenu.connection.config.id;
       uiStore.openConnectionModal();
       closeContextMenu();
@@ -63,7 +62,6 @@
     }
   }
 
-  // Expose editing connection ID for the modal
   let editingConnectionId = $state<string | null>(null);
 </script>
 
@@ -76,6 +74,7 @@
     </div>
   {:else}
     {#each connectionStore.connections as conn}
+      {@const meta = DB_METADATA[conn.config.db_type]}
       <button
         class="connection-item"
         class:active={conn.config.id === connectionStore.activeConnectionId}
@@ -85,8 +84,8 @@
       >
         <span class="status-dot {conn.status}"></span>
         <span class="conn-name truncate">{conn.config.name}</span>
-        <span class="badge {conn.config.db_type === 'PostgreSQL' ? 'badge-pg' : 'badge-mysql'}">
-          {conn.config.db_type === 'PostgreSQL' ? 'PG' : 'MY'}
+        <span class="badge {meta.badgeClass}">
+          {meta.badge}
         </span>
       </button>
     {/each}

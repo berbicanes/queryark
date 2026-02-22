@@ -1,3 +1,26 @@
+// Generic models (all database types)
+export interface ContainerInfo {
+  name: string;
+  container_type: string;
+}
+
+export interface ItemInfo {
+  name: string;
+  container: string;
+  item_type: string;
+  item_count: number | null;
+}
+
+export interface FieldInfo {
+  name: string;
+  data_type: string;
+  is_nullable: boolean;
+  is_primary: boolean;
+  default_value: string | null;
+  ordinal_position: number;
+}
+
+// SQL-specific models
 export interface SchemaInfo {
   name: string;
 }

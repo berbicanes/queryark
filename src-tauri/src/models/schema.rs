@@ -1,5 +1,33 @@
 use serde::{Deserialize, Serialize};
 
+// === Generic models (all database types) ===
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContainerInfo {
+    pub name: String,
+    pub container_type: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ItemInfo {
+    pub name: String,
+    pub container: String,
+    pub item_type: String,
+    pub item_count: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FieldInfo {
+    pub name: String,
+    pub data_type: String,
+    pub is_nullable: bool,
+    pub is_primary: bool,
+    pub default_value: Option<String>,
+    pub ordinal_position: i32,
+}
+
+// === SQL-specific models (kept for backward compatibility) ===
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SchemaInfo {
     pub name: String,
@@ -42,3 +70,38 @@ pub struct ForeignKeyInfo {
     pub on_update: String,
     pub on_delete: String,
 }
+
+// Conversion helpers
+impl From<&SchemaInfo> for ContainerInfo {
+    fn from(s: &SchemaInfo) -> Self {
+        ContainerInfo {
+            name: s.name.clone(),
+            container_type: "schema".to_string(),
+        }
+    }
+}
+
+impl From<&TableInfo> for ItemInfo {
+    fn from(t: &TableInfo) -> Self {
+        ItemInfo {
+            name: t.name.clone(),
+            container: t.schema.clone(),
+            item_type: t.table_type.clone(),
+            item_count: t.row_count,
+        }
+    }
+}
+
+impl From<&ColumnInfo> for FieldInfo {
+    fn from(c: &ColumnInfo) -> Self {
+        FieldInfo {
+            name: c.name.clone(),
+            data_type: c.data_type.clone(),
+            is_nullable: c.is_nullable,
+            is_primary: c.is_primary_key,
+            default_value: c.column_default.clone(),
+            ordinal_position: c.ordinal_position,
+        }
+    }
+}
+

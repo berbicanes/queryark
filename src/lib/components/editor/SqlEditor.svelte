@@ -3,17 +3,18 @@
   import { EditorState } from '@codemirror/state';
   import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine } from '@codemirror/view';
   import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
-  import { sql, PostgreSQL, MySQL } from '@codemirror/lang-sql';
+  import { sql, PostgreSQL, MySQL, SQLite, MSSQL, Cassandra } from '@codemirror/lang-sql';
   import { oneDark } from '@codemirror/theme-one-dark';
   import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
   import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
   import { lintKeymap } from '@codemirror/lint';
   import { syntaxHighlighting, defaultHighlightStyle, indentOnInput, bracketMatching, foldGutter, foldKeymap } from '@codemirror/language';
+  import type { DatabaseType } from '$lib/types/connection';
 
   let { value = $bindable(''), onexecute, dialect = 'PostgreSQL' }: {
     value: string;
     onexecute?: () => void;
-    dialect?: 'PostgreSQL' | 'MySQL';
+    dialect?: DatabaseType;
   } = $props();
 
   let editorContainer: HTMLDivElement;
@@ -112,7 +113,26 @@
   ]);
 
   function getSqlDialect() {
-    return dialect === 'MySQL' ? MySQL : PostgreSQL;
+    switch (dialect) {
+      case 'MySQL':
+      case 'MariaDB':
+        return MySQL;
+      case 'SQLite':
+        return SQLite;
+      case 'MSSQL':
+        return MSSQL;
+      case 'Cassandra':
+      case 'ScyllaDB':
+        return Cassandra;
+      default:
+        // PostgreSQL, CockroachDB, Redshift, Oracle, ClickHouse, Snowflake, BigQuery
+        return PostgreSQL;
+    }
+  }
+
+  function getLanguageExtension() {
+    // For non-SQL databases, use plain SQL mode as a reasonable fallback
+    return sql({ dialect: getSqlDialect() });
   }
 
   onMount(() => {
@@ -152,7 +172,7 @@
           ...lintKeymap,
           indentWithTab,
         ]),
-        sql({ dialect: getSqlDialect() }),
+        getLanguageExtension(),
         oneDark,
         appTheme,
         updateListener,

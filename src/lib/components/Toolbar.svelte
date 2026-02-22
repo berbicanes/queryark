@@ -2,6 +2,7 @@
   import { connectionStore } from '$lib/stores/connections.svelte';
   import { tabStore } from '$lib/stores/tabs.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
+  import { DB_METADATA } from '$lib/types/database';
 
   let showConnectionDropdown = $state(false);
 
@@ -21,7 +22,6 @@
   }
 
   function handleRun() {
-    // Dispatch a global keyboard event for Ctrl+Enter to the active editor
     window.dispatchEvent(new CustomEvent('dataforge:execute-query'));
   }
 
@@ -73,10 +73,11 @@
         onclick={(e) => { e.stopPropagation(); showConnectionDropdown = !showConnectionDropdown; }}
       >
         {#if activeConnection}
+          {@const meta = DB_METADATA[activeConnection.config.db_type]}
           <span class="status-dot {activeConnection.status}"></span>
           <span class="conn-name">{activeConnection.config.name}</span>
-          <span class="badge {activeConnection.config.db_type === 'PostgreSQL' ? 'badge-pg' : 'badge-mysql'}">
-            {activeConnection.config.db_type === 'PostgreSQL' ? 'PG' : 'MY'}
+          <span class="badge {meta.badgeClass}">
+            {meta.badge}
           </span>
         {:else}
           <span class="text-muted">No connection</span>
@@ -93,6 +94,7 @@
             <div class="dropdown-empty">No connected databases</div>
           {:else}
             {#each connectedConnections as conn}
+              {@const connMeta = DB_METADATA[conn.config.db_type]}
               <button
                 class="dropdown-item"
                 class:active={conn.config.id === connectionStore.activeConnectionId}
@@ -100,8 +102,8 @@
               >
                 <span class="status-dot {conn.status}"></span>
                 <span class="truncate">{conn.config.name}</span>
-                <span class="badge {conn.config.db_type === 'PostgreSQL' ? 'badge-pg' : 'badge-mysql'}">
-                  {conn.config.db_type === 'PostgreSQL' ? 'PG' : 'MY'}
+                <span class="badge {connMeta.badgeClass}">
+                  {connMeta.badge}
                 </span>
               </button>
             {/each}

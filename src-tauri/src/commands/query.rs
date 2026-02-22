@@ -10,6 +10,6 @@ pub async fn execute_query(
     sql: String,
     pool_manager: State<'_, PoolManager>,
 ) -> Result<QueryResponse, AppError> {
-    let driver = pool_manager.get(&connection_id).await?;
-    driver.execute_query(&sql).await
+    let handle = pool_manager.get(&connection_id).await?;
+    handle.base().execute_raw(&sql).await
 }

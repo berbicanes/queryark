@@ -4,51 +4,110 @@
   import { uiStore } from '$lib/stores/ui.svelte';
   import * as connectionService from '$lib/services/connectionService';
   import type { ConnectionConfig, DatabaseType } from '$lib/types/connection';
+  import { DB_METADATA, DB_GROUPS } from '$lib/types/database';
 
-  // Check if we're editing an existing connection
-  // We look for a recently-set-active connection to edit based on the modal being opened
-  // For simplicity, we use a prop-like approach through the store
   let editConnection = $state<ConnectionConfig | null>(null);
 
   // Form state
   let name = $state('');
   let dbType = $state<DatabaseType>('PostgreSQL');
   let host = $state('localhost');
-  let port = $state(5432);
+  let port = $state<number | undefined>(5432);
   let username = $state('');
   let password = $state('');
   let database = $state('');
   let useSsl = $state(false);
+  // SQLite
+  let filePath = $state('');
+  // Oracle
+  let oracleSid = $state('');
+  let oracleServiceName = $state('');
+  // Snowflake
+  let snowflakeAccount = $state('');
+  let snowflakeWarehouse = $state('');
+  let snowflakeRole = $state('');
+  // Neo4j
+  let boltUrl = $state('');
+  // AWS
+  let awsRegion = $state('us-east-1');
+  let awsAccessKey = $state('');
+  let awsSecretKey = $state('');
 
   let isTesting = $state(false);
   let testResult = $state<'success' | 'fail' | null>(null);
   let isSaving = $state(false);
 
   let isEditing = $derived(editConnection !== null);
+  let meta = $derived(DB_METADATA[dbType]);
 
   // Auto-switch port when database type changes
   $effect(() => {
     if (!isEditing) {
-      if (dbType === 'PostgreSQL') {
-        port = 5432;
-      } else {
-        port = 3306;
-      }
+      const defaultPort = DB_METADATA[dbType].defaultPort;
+      port = defaultPort ?? undefined;
     }
   });
 
   function buildConfig(): ConnectionConfig {
-    return {
+    const config: ConnectionConfig = {
       id: editConnection?.id ?? uuidv4(),
       name,
       db_type: dbType,
-      host,
-      port,
-      username,
-      password,
-      database,
       use_ssl: useSsl,
     };
+
+    if (meta.requiresHost) {
+      config.host = host;
+      config.port = port;
+      config.username = username;
+      config.password = password;
+    }
+
+    if (meta.requiresFilePath) {
+      config.file_path = filePath;
+    }
+
+    if (database) config.database = database;
+
+    // Oracle-specific
+    if (dbType === 'Oracle') {
+      if (oracleSid) config.oracle_sid = oracleSid;
+      if (oracleServiceName) config.oracle_service_name = oracleServiceName;
+    }
+
+    // Snowflake-specific
+    if (dbType === 'Snowflake') {
+      config.snowflake_account = snowflakeAccount;
+      if (snowflakeWarehouse) config.snowflake_warehouse = snowflakeWarehouse;
+      if (snowflakeRole) config.snowflake_role = snowflakeRole;
+    }
+
+    // Neo4j-specific
+    if (dbType === 'Neo4j') {
+      if (boltUrl) config.bolt_url = boltUrl;
+    }
+
+    // DynamoDB-specific
+    if (dbType === 'DynamoDB') {
+      config.aws_region = awsRegion;
+      if (awsAccessKey && awsSecretKey) {
+        config.cloud_auth = {
+          AwsCredentials: {
+            access_key: awsAccessKey,
+            secret_key: awsSecretKey,
+            region: awsRegion,
+          }
+        };
+      }
+    }
+
+    // BigQuery-specific
+    if (dbType === 'BigQuery') {
+      // credentials_json would be pasted or loaded from file
+      if (database) config.database = database; // project ID
+    }
+
+    return config;
   }
 
   async function handleTestConnection() {
@@ -70,12 +129,16 @@
       uiStore.showError('Connection name is required');
       return;
     }
-    if (!host.trim()) {
+    if (meta.requiresHost && !host.trim()) {
       uiStore.showError('Host is required');
       return;
     }
-    if (!database.trim()) {
-      uiStore.showError('Database name is required');
+    if (meta.requiresFilePath && !filePath.trim()) {
+      uiStore.showError('File path is required');
+      return;
+    }
+    if (dbType === 'Snowflake' && !snowflakeAccount.trim()) {
+      uiStore.showError('Snowflake account is required');
       return;
     }
 
@@ -136,11 +199,16 @@
       </div>
 
       <div class="form-row">
-        <div class="form-group">
+        <div class="form-group" style="flex: 2">
           <label for="conn-type">Database Type</label>
           <select id="conn-type" bind:value={dbType}>
-            <option value="PostgreSQL">PostgreSQL</option>
-            <option value="MySQL">MySQL</option>
+            {#each DB_GROUPS as group}
+              <optgroup label={group.name}>
+                {#each group.types as type}
+                  <option value={type}>{DB_METADATA[type].label}</option>
+                {/each}
+              </optgroup>
+            {/each}
           </select>
         </div>
         <div class="form-group">
@@ -155,58 +223,177 @@
         </div>
       </div>
 
-      <div class="form-row">
-        <div class="form-group" style="flex: 2">
-          <label for="conn-host">Host</label>
-          <input
-            id="conn-host"
-            type="text"
-            bind:value={host}
-            placeholder="localhost"
-          />
+      {#if meta.requiresHost}
+        <div class="form-row">
+          <div class="form-group" style="flex: 2">
+            <label for="conn-host">Host</label>
+            <input
+              id="conn-host"
+              type="text"
+              bind:value={host}
+              placeholder="localhost"
+            />
+          </div>
+          {#if meta.defaultPort !== null}
+            <div class="form-group" style="flex: 1">
+              <label for="conn-port">Port</label>
+              <input
+                id="conn-port"
+                type="number"
+                bind:value={port}
+                min="1"
+                max="65535"
+              />
+            </div>
+          {/if}
         </div>
-        <div class="form-group" style="flex: 1">
-          <label for="conn-port">Port</label>
-          <input
-            id="conn-port"
-            type="number"
-            bind:value={port}
-            min="1"
-            max="65535"
-          />
-        </div>
-      </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label for="conn-user">Username</label>
-          <input
-            id="conn-user"
-            type="text"
-            bind:value={username}
-            placeholder="postgres"
-          />
+        <div class="form-row">
+          <div class="form-group">
+            <label for="conn-user">Username</label>
+            <input
+              id="conn-user"
+              type="text"
+              bind:value={username}
+              placeholder="user"
+            />
+          </div>
+          <div class="form-group">
+            <label for="conn-pass">Password</label>
+            <input
+              id="conn-pass"
+              type="password"
+              bind:value={password}
+              placeholder="********"
+            />
+          </div>
         </div>
-        <div class="form-group">
-          <label for="conn-pass">Password</label>
-          <input
-            id="conn-pass"
-            type="password"
-            bind:value={password}
-            placeholder="********"
-          />
-        </div>
-      </div>
+      {/if}
 
-      <div class="form-group">
-        <label for="conn-db">Database</label>
-        <input
-          id="conn-db"
-          type="text"
-          bind:value={database}
-          placeholder="mydb"
-        />
-      </div>
+      {#if meta.requiresFilePath}
+        <div class="form-group">
+          <label for="conn-filepath">File Path</label>
+          <input
+            id="conn-filepath"
+            type="text"
+            bind:value={filePath}
+            placeholder="/path/to/database.db"
+          />
+        </div>
+      {/if}
+
+      {#if dbType === 'Oracle'}
+        <div class="form-row">
+          <div class="form-group">
+            <label for="conn-oracle-sid">SID</label>
+            <input
+              id="conn-oracle-sid"
+              type="text"
+              bind:value={oracleSid}
+              placeholder="ORCL"
+            />
+          </div>
+          <div class="form-group">
+            <label for="conn-oracle-service">Service Name</label>
+            <input
+              id="conn-oracle-service"
+              type="text"
+              bind:value={oracleServiceName}
+              placeholder="orcl.example.com"
+            />
+          </div>
+        </div>
+      {/if}
+
+      {#if dbType === 'Snowflake'}
+        <div class="form-group">
+          <label for="conn-sf-account">Account</label>
+          <input
+            id="conn-sf-account"
+            type="text"
+            bind:value={snowflakeAccount}
+            placeholder="xy12345.us-east-1"
+          />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="conn-sf-warehouse">Warehouse</label>
+            <input
+              id="conn-sf-warehouse"
+              type="text"
+              bind:value={snowflakeWarehouse}
+              placeholder="COMPUTE_WH"
+            />
+          </div>
+          <div class="form-group">
+            <label for="conn-sf-role">Role</label>
+            <input
+              id="conn-sf-role"
+              type="text"
+              bind:value={snowflakeRole}
+              placeholder="SYSADMIN"
+            />
+          </div>
+        </div>
+      {/if}
+
+      {#if dbType === 'Neo4j'}
+        <div class="form-group">
+          <label for="conn-bolt-url">Bolt URL (optional)</label>
+          <input
+            id="conn-bolt-url"
+            type="text"
+            bind:value={boltUrl}
+            placeholder="bolt://localhost:7687"
+          />
+        </div>
+      {/if}
+
+      {#if dbType === 'DynamoDB'}
+        <div class="form-group">
+          <label for="conn-aws-region">AWS Region</label>
+          <input
+            id="conn-aws-region"
+            type="text"
+            bind:value={awsRegion}
+            placeholder="us-east-1"
+          />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="conn-aws-key">Access Key</label>
+            <input
+              id="conn-aws-key"
+              type="text"
+              bind:value={awsAccessKey}
+              placeholder="AKIA..."
+            />
+          </div>
+          <div class="form-group">
+            <label for="conn-aws-secret">Secret Key</label>
+            <input
+              id="conn-aws-secret"
+              type="password"
+              bind:value={awsSecretKey}
+              placeholder="********"
+            />
+          </div>
+        </div>
+      {/if}
+
+      {#if !meta.requiresFilePath && dbType !== 'DynamoDB'}
+        <div class="form-group">
+          <label for="conn-db">
+            {dbType === 'BigQuery' ? 'Project ID' : 'Database'}
+          </label>
+          <input
+            id="conn-db"
+            type="text"
+            bind:value={database}
+            placeholder={dbType === 'BigQuery' ? 'my-project-id' : 'mydb'}
+          />
+        </div>
+      {/if}
 
       {#if testResult !== null}
         <div class="test-result" class:success={testResult === 'success'} class:fail={testResult === 'fail'}>
@@ -261,7 +448,7 @@
 
 <style>
   .connection-modal {
-    width: 480px;
+    width: 520px;
   }
 
   .close-btn {

@@ -3,11 +3,11 @@ use std::sync::Arc;
 
 use tokio::sync::RwLock;
 
-use crate::db::traits::DbDriver;
+use crate::db::handle::DriverHandle;
 use crate::error::AppError;
 
 pub struct PoolManager {
-    pools: RwLock<HashMap<String, Arc<dyn DbDriver>>>,
+    pools: RwLock<HashMap<String, Arc<DriverHandle>>>,
 }
 
 impl PoolManager {
@@ -17,12 +17,12 @@ impl PoolManager {
         }
     }
 
-    pub async fn add(&self, id: String, driver: Arc<dyn DbDriver>) {
+    pub async fn add(&self, id: String, handle: DriverHandle) {
         let mut pools = self.pools.write().await;
-        pools.insert(id, driver);
+        pools.insert(id, Arc::new(handle));
     }
 
-    pub async fn get(&self, id: &str) -> Result<Arc<dyn DbDriver>, AppError> {
+    pub async fn get(&self, id: &str) -> Result<Arc<DriverHandle>, AppError> {
         let pools = self.pools.read().await;
         pools
             .get(id)

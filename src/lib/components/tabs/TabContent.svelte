@@ -2,6 +2,9 @@
   import { tabStore } from '$lib/stores/tabs.svelte';
   import QueryTab from './QueryTab.svelte';
   import TableTab from './TableTab.svelte';
+  import DocumentTab from './DocumentTab.svelte';
+  import KeyValueTab from './KeyValueTab.svelte';
+  import GraphTab from './GraphTab.svelte';
 
   let { onqueryresult }: {
     onqueryresult?: (detail: { executionTime: number; rowCount: number }) => void;
@@ -22,6 +25,18 @@
   {:else if activeTab.type === 'table'}
     {#key activeTab.id}
       <TableTab tab={activeTab} {onqueryresult} />
+    {/key}
+  {:else if activeTab.type === 'document'}
+    {#key activeTab.id}
+      <DocumentTab tab={activeTab} />
+    {/key}
+  {:else if activeTab.type === 'keyvalue'}
+    {#key activeTab.id}
+      <KeyValueTab tab={activeTab} />
+    {/key}
+  {:else if activeTab.type === 'graph'}
+    {#key activeTab.id}
+      <GraphTab tab={activeTab} />
     {/key}
   {/if}
 </div>

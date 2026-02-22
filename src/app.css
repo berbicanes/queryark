@@ -273,6 +273,81 @@ a:hover {
   color: var(--warning);
 }
 
+.badge-mariadb {
+  background: rgba(203, 166, 247, 0.2);
+  color: #cba6f7;
+}
+
+.badge-sqlite {
+  background: rgba(148, 226, 213, 0.2);
+  color: #94e2d5;
+}
+
+.badge-mssql {
+  background: rgba(243, 139, 168, 0.2);
+  color: var(--error);
+}
+
+.badge-oracle {
+  background: rgba(250, 179, 135, 0.2);
+  color: #fab387;
+}
+
+.badge-cockroach {
+  background: rgba(166, 227, 161, 0.2);
+  color: var(--success);
+}
+
+.badge-redshift {
+  background: rgba(243, 139, 168, 0.2);
+  color: #f38ba8;
+}
+
+.badge-clickhouse {
+  background: rgba(249, 226, 175, 0.2);
+  color: #f9e2af;
+}
+
+.badge-snowflake {
+  background: rgba(137, 220, 235, 0.2);
+  color: #89dceb;
+}
+
+.badge-bigquery {
+  background: rgba(116, 199, 236, 0.2);
+  color: #74c7ec;
+}
+
+.badge-mongodb {
+  background: rgba(166, 227, 161, 0.2);
+  color: #a6e3a1;
+}
+
+.badge-cassandra {
+  background: rgba(137, 180, 250, 0.2);
+  color: #89b4fa;
+}
+
+.badge-scylladb {
+  background: rgba(250, 179, 135, 0.2);
+  color: #fab387;
+}
+
+.badge-redis {
+  background: rgba(243, 139, 168, 0.2);
+  color: #f38ba8;
+}
+
+.badge-neo4j {
+  background: rgba(148, 226, 213, 0.2);
+  color: #94e2d5;
+}
+
+.badge-dynamodb {
+  background: rgba(249, 226, 175, 0.2);
+  color: #f9e2af;
+}
+
 /* Status dot */
 .status-dot {
   display: inline-block;

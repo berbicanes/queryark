@@ -1,8 +1,12 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { ConnectionConfig } from '$lib/types/connection';
+import type { ConnectionConfig, DatabaseCategory } from '$lib/types/connection';
 import type { QueryResponse } from '$lib/types/query';
-import type { SchemaInfo, TableInfo, ColumnInfo, IndexInfo, ForeignKeyInfo } from '$lib/types/schema';
+import type {
+  SchemaInfo, TableInfo, ColumnInfo, IndexInfo, ForeignKeyInfo,
+  ContainerInfo, ItemInfo, FieldInfo
+} from '$lib/types/schema';
 
+// Connection management
 export async function connectDb(config: ConnectionConfig): Promise<string> {
   return invoke<string>('connect_db', { config });
 }
@@ -15,10 +19,37 @@ export async function testConnection(config: ConnectionConfig): Promise<boolean>
   return invoke<boolean>('test_connection', { config });
 }
 
+// Query execution
 export async function executeQuery(connectionId: string, sql: string): Promise<QueryResponse> {
   return invoke<QueryResponse>('execute_query', { connectionId, sql });
 }
 
+// Generic schema browsing (all databases)
+export async function getDatabaseCategory(connectionId: string): Promise<DatabaseCategory> {
+  return invoke<DatabaseCategory>('get_database_category', { connectionId });
+}
+
+export async function getContainers(connectionId: string): Promise<ContainerInfo[]> {
+  return invoke<ContainerInfo[]>('get_containers', { connectionId });
+}
+
+export async function getItems(connectionId: string, container: string): Promise<ItemInfo[]> {
+  return invoke<ItemInfo[]>('get_items', { connectionId, container });
+}
+
+export async function getItemFields(connectionId: string, container: string, item: string): Promise<FieldInfo[]> {
+  return invoke<FieldInfo[]>('get_item_fields', { connectionId, container, item });
+}
+
+export async function getItemData(connectionId: string, container: string, item: string, limit: number, offset: number): Promise<QueryResponse> {
+  return invoke<QueryResponse>('get_item_data', { connectionId, container, item, limit, offset });
+}
+
+export async function getItemCount(connectionId: string, container: string, item: string): Promise<number> {
+  return invoke<number>('get_item_count', { connectionId, container, item });
+}
+
+// SQL-specific schema (relational + analytics + CQL)
 export async function getSchemas(connectionId: string): Promise<SchemaInfo[]> {
   return invoke<SchemaInfo[]>('get_schemas', { connectionId });
 }
@@ -57,4 +88,55 @@ export async function insertRow(connectionId: string, schema: string, table: str
 
 export async function deleteRows(connectionId: string, schema: string, table: string, pkColumns: string[], pkValuesList: string[][]): Promise<number> {
   return invoke<number>('delete_rows', { connectionId, schema, table, pkColumns, pkValuesList });
+}
+
+// Document operations (MongoDB, DynamoDB)
+export async function insertDocument(connectionId: string, container: string, item: string, document: string): Promise<string> {
+  return invoke<string>('insert_document', { connectionId, container, item, document });
+}
+
+export async function updateDocument(connectionId: string, container: string, item: string, filter: string, update: string): Promise<number> {
+  return invoke<number>('update_document', { connectionId, container, item, filter, update });
+}
+
+export async function deleteDocuments(connectionId: string, container: string, item: string, filter: string): Promise<number> {
+  return invoke<number>('delete_documents', { connectionId, container, item, filter });
+}
+
+// Key-value operations (Redis)
+export async function getValue(connectionId: string, key: string): Promise<string> {
+  return invoke<string>('get_value', { connectionId, key });
+}
+
+export async function setValue(connectionId: string, key: string, value: string, ttl: number | null = null): Promise<void> {
+  return invoke<void>('set_value', { connectionId, key, value, ttl });
+}
+
+export async function deleteKeys(connectionId: string, keys: string[]): Promise<number> {
+  return invoke<number>('delete_keys', { connectionId, keys });
+}
+
+export async function getKeyType(connectionId: string, key: string): Promise<string> {
+  return invoke<string>('get_key_type', { connectionId, key });
+}
+
+export async function scanKeys(connectionId: string, pattern: string, count: number): Promise<string[]> {
+  return invoke<string[]>('scan_keys', { connectionId, pattern, count });
+}
+
+// Graph operations (Neo4j)
+export async function getLabels(connectionId: string): Promise<string[]> {
+  return invoke<string[]>('get_labels', { connectionId });
+}
+
+export async function getRelationshipTypes(connectionId: string): Promise<string[]> {
+  return invoke<string[]>('get_relationship_types', { connectionId });
+}
+
+export async function getNodeProperties(connectionId: string, label: string): Promise<string[]> {
+  return invoke<string[]>('get_node_properties', { connectionId, label });
+}
+
+export async function getNodes(connectionId: string, label: string, limit: number, skip: number): Promise<QueryResponse> {
+  return invoke<QueryResponse>('get_nodes', { connectionId, label, limit, skip });
 }
