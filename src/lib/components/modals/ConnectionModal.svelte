@@ -34,6 +34,19 @@
   let awsSecretKey = $state('');
   // Group
   let group = $state('');
+  // Color
+  let color = $state('');
+
+  const COLOR_PALETTE = [
+    '#ef4444', // red
+    '#f97316', // orange
+    '#eab308', // yellow
+    '#22c55e', // green
+    '#06b6d4', // cyan
+    '#3b82f6', // blue
+    '#8b5cf6', // violet
+    '#ec4899', // pink
+  ];
 
   let isTesting = $state(false);
   let testResult = $state<'success' | 'fail' | null>(null);
@@ -59,6 +72,7 @@
     };
 
     if (group.trim()) config.group = group.trim();
+    if (color) config.color = color;
 
     if (meta.requiresHost) {
       config.host = host;
@@ -216,6 +230,33 @@
             <option value={g}></option>
           {/each}
         </datalist>
+      </div>
+
+      <div class="form-group">
+        <label>Color (optional)</label>
+        <div class="color-palette">
+          <button
+            class="color-swatch no-color"
+            class:selected={!color}
+            onclick={() => { color = ''; }}
+            title="No color"
+            type="button"
+          >
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+              <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+          {#each COLOR_PALETTE as c}
+            <button
+              class="color-swatch"
+              class:selected={color === c}
+              style="background: {c}"
+              onclick={() => { color = c; }}
+              title={c}
+              type="button"
+            ></button>
+          {/each}
+        </div>
       </div>
 
       <div class="form-row">
@@ -469,6 +510,44 @@
 <style>
   .connection-modal {
     width: 520px;
+  }
+
+  .color-palette {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    padding-top: 2px;
+  }
+
+  .color-swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    padding: 0;
+    transition: border-color var(--transition-fast), transform var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .color-swatch:hover {
+    transform: scale(1.15);
+  }
+
+  .color-swatch.selected {
+    border-color: var(--text-primary);
+  }
+
+  .color-swatch.no-color {
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
+    color: var(--text-muted);
+  }
+
+  .color-swatch.no-color.selected {
+    border-color: var(--text-primary);
   }
 
   .close-btn {

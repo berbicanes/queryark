@@ -95,6 +95,17 @@
       </svg>
     </button>
 
+    <button
+      class="btn toolbar-btn"
+      onclick={() => { uiStore.showSettingsModal = true; }}
+      title="Settings"
+    >
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+        <circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.2"/>
+        <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+    </button>
+
     <div class="toolbar-divider"></div>
     <div class="connection-selector">
       <button

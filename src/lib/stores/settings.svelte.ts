@@ -6,6 +6,10 @@ export type Theme = 'dark' | 'light';
 class SettingsStore {
   theme = $state<Theme>('dark');
   shortcutOverrides = $state<Record<string, string>>({});
+  editorFontSize = $state(13);
+  gridFontSize = $state(12);
+  defaultPageSize = $state(100);
+  confirmBeforeDelete = $state(true);
   private store: Store | null = null;
   private initialized = false;
 
@@ -20,7 +24,17 @@ class SettingsStore {
     if (savedShortcuts) {
       this.shortcutOverrides = savedShortcuts;
     }
+    const savedEditorFontSize = await this.store.get<number>('editorFontSize');
+    if (savedEditorFontSize) this.editorFontSize = savedEditorFontSize;
+    const savedGridFontSize = await this.store.get<number>('gridFontSize');
+    if (savedGridFontSize) this.gridFontSize = savedGridFontSize;
+    const savedPageSize = await this.store.get<number>('defaultPageSize');
+    if (savedPageSize) this.defaultPageSize = savedPageSize;
+    const savedConfirm = await this.store.get<boolean>('confirmBeforeDelete');
+    if (savedConfirm !== null && savedConfirm !== undefined) this.confirmBeforeDelete = savedConfirm;
+
     this.applyTheme();
+    this.applyFontSizes();
     this.initialized = true;
   }
 
@@ -28,12 +42,21 @@ class SettingsStore {
     if (this.store) {
       await this.store.set('theme', this.theme);
       await this.store.set('shortcutOverrides', this.shortcutOverrides);
+      await this.store.set('editorFontSize', this.editorFontSize);
+      await this.store.set('gridFontSize', this.gridFontSize);
+      await this.store.set('defaultPageSize', this.defaultPageSize);
+      await this.store.set('confirmBeforeDelete', this.confirmBeforeDelete);
       await this.store.save();
     }
   }
 
   applyTheme() {
     document.documentElement.setAttribute('data-theme', this.theme);
+  }
+
+  applyFontSizes() {
+    document.documentElement.style.setProperty('--editor-font-size', `${this.editorFontSize}px`);
+    document.documentElement.style.setProperty('--grid-font-size', `${this.gridFontSize}px`);
   }
 
   setTheme(theme: Theme) {
@@ -44,6 +67,28 @@ class SettingsStore {
 
   toggleTheme() {
     this.setTheme(this.theme === 'dark' ? 'light' : 'dark');
+  }
+
+  setEditorFontSize(size: number) {
+    this.editorFontSize = Math.max(10, Math.min(24, size));
+    this.applyFontSizes();
+    this.persist();
+  }
+
+  setGridFontSize(size: number) {
+    this.gridFontSize = Math.max(10, Math.min(24, size));
+    this.applyFontSizes();
+    this.persist();
+  }
+
+  setDefaultPageSize(size: number) {
+    this.defaultPageSize = Math.max(10, Math.min(10000, size));
+    this.persist();
+  }
+
+  setConfirmBeforeDelete(value: boolean) {
+    this.confirmBeforeDelete = value;
+    this.persist();
   }
 
   getBinding(actionId: string): string {

@@ -36,6 +36,9 @@ class UiStore {
   showCommandPalette = $state(false);
   sidebarCollapsed = $state(false);
 
+  // Phase 10 — Settings
+  showSettingsModal = $state(false);
+
   // Schema management modals
   showCreateTableModal = $state(false);
   createTableContext = $state<CreateTableContext | null>(null);

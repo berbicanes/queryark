@@ -10,13 +10,13 @@
   let dropTargetIndex = $state<number | null>(null);
   let contextMenu = $state<{ x: number; y: number; tabId: string } | null>(null);
 
-  // Filter tabs by pane if in split mode
+  // Filter tabs by pane if in split mode, otherwise use sorted tabs (pinned first)
   let visibleTabs = $derived.by(() => {
     if (tabStore.splitMode && paneId) {
       const paneTabIds = paneId === 'left' ? tabStore.leftPaneTabs : tabStore.rightPaneTabs;
       return tabStore.tabs.filter(t => paneTabIds.includes(t.id));
     }
-    return tabStore.tabs;
+    return tabStore.sortedTabs;
   });
 
   let currentActiveTabId = $derived.by(() => {
@@ -25,6 +25,11 @@
     }
     return tabStore.activeTabId;
   });
+
+  function getConnectionColor(connectionId: string): string | undefined {
+    const conn = connectionStore.connections.find(c => c.config.id === connectionId);
+    return conn?.config.color;
+  }
 
   function handleTabClick(id: string) {
     tabStore.setActive(id);
@@ -109,16 +114,31 @@
 
   function ctxClose() {
     if (contextMenu) {
-      tabStore.closeTab(contextMenu.tabId);
+      tabStore.closeTab(contextMenu.tabId, true);
       closeContextMenu();
     }
   }
 
   function ctxCloseOthers() {
     if (!contextMenu) return;
-    const keepId = contextMenu.tabId;
-    const toClose = visibleTabs.filter(t => t.id !== keepId).map(t => t.id);
-    for (const id of toClose) tabStore.closeTab(id);
+    tabStore.closeOthers(contextMenu.tabId);
+    closeContextMenu();
+  }
+
+  function ctxCloseAll() {
+    tabStore.closeAll();
+    closeContextMenu();
+  }
+
+  function ctxDuplicate() {
+    if (!contextMenu) return;
+    tabStore.duplicateTab(contextMenu.tabId);
+    closeContextMenu();
+  }
+
+  function ctxTogglePin() {
+    if (!contextMenu) return;
+    tabStore.togglePin(contextMenu.tabId);
     closeContextMenu();
   }
 
@@ -127,6 +147,10 @@
     tabStore.splitTab(contextMenu.tabId);
     closeContextMenu();
   }
+
+  function isTabPinned(tabId: string): boolean {
+    return tabStore.tabs.find(t => t.id === tabId)?.pinned ?? false;
+  }
 </script>
 
 <svelte:window onclick={closeContextMenu} />
@@ -134,10 +158,12 @@
 <div class="tab-bar">
   <div class="tabs-scroll" bind:this={scrollContainer}>
     {#each visibleTabs as tab, i}
+      {@const connColor = getConnectionColor(tab.connectionId)}
       <!-- svelte-ignore a11y_no_static_element_interactions -->
       <div
         class="tab"
         class:active={tab.id === currentActiveTabId}
+        class:pinned={tab.pinned}
         class:drag-over={dropTargetIndex === i && draggedTabId !== tab.id}
         class:dragging={draggedTabId === tab.id}
         draggable="true"
@@ -154,17 +180,29 @@
         tabindex="0"
         title={tab.title}
       >
+        {#if connColor}
+          <span class="tab-color-stripe" style="background: {connColor}"></span>
+        {/if}
+        {#if tab.pinned}
+          <span class="pin-icon" title="Pinned">
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+              <path d="M10 1L6 5l-3.5.5L5 8l-3 6 6-3 2.5 2.5L11 10l4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        {/if}
         <span class="tab-icon">{getTabIcon(tab.type)}</span>
         <span class="tab-title truncate">{tab.title}</span>
-        <button
-          class="tab-close"
-          onclick={(e) => handleTabClose(e, tab.id)}
-          title="Close tab"
-        >
-          <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
-            <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          </svg>
-        </button>
+        {#if !tab.pinned}
+          <button
+            class="tab-close"
+            onclick={(e) => handleTabClose(e, tab.id)}
+            title="Close tab"
+          >
+            <svg width="10" height="10" viewBox="0 0 16 16" fill="none">
+              <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        {/if}
       </div>
     {/each}
   </div>
@@ -177,6 +215,7 @@
 </div>
 
 {#if contextMenu}
+  {@const pinned = isTabPinned(contextMenu.tabId)}
   <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
     class="context-menu"
@@ -184,8 +223,14 @@
     onclick={(e) => e.stopPropagation()}
     onkeydown={(e) => { if (e.key === 'Escape') closeContextMenu(); }}
   >
+    <button class="context-item" onclick={ctxTogglePin}>
+      {pinned ? 'Unpin' : 'Pin'}
+    </button>
+    <button class="context-item" onclick={ctxDuplicate}>Duplicate</button>
+    <div class="context-divider"></div>
     <button class="context-item" onclick={ctxClose}>Close</button>
     <button class="context-item" onclick={ctxCloseOthers}>Close Others</button>
+    <button class="context-item" onclick={ctxCloseAll}>Close All</button>
     {#if !tabStore.splitMode && tabStore.tabs.length >= 2}
       <div class="context-divider"></div>
       <button class="context-item" onclick={ctxSplitRight}>Split Right</button>
@@ -256,6 +301,10 @@
     background: var(--accent);
   }
 
+  .tab.pinned {
+    min-width: auto;
+  }
+
   .tab.dragging {
     opacity: 0.4;
   }
@@ -270,6 +319,23 @@
     background: var(--accent);
     border-radius: 1px;
     z-index: 5;
+  }
+
+  .tab-color-stripe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    border-radius: 1px 1px 0 0;
+  }
+
+  .pin-icon {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    color: var(--text-muted);
+    font-size: 10px;
   }
 
   .tab-icon {

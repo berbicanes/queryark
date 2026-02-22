@@ -18,6 +18,13 @@ class TabStore {
     return this.tabs.find(t => t.id === this.activeTabId);
   }
 
+  /** Sorted view: pinned tabs first, then unpinned, preserving relative order within each group */
+  get sortedTabs(): Tab[] {
+    const pinned = this.tabs.filter(t => t.pinned);
+    const unpinned = this.tabs.filter(t => !t.pinned);
+    return [...pinned, ...unpinned];
+  }
+
   openTab(tab: Omit<Tab, 'id'>) {
     // Check for existing table tab with same connection+schema+table
     if (tab.type === 'table') {
@@ -64,9 +71,14 @@ class TabStore {
     return id;
   }
 
-  closeTab(id: string) {
-    const idx = this.tabs.findIndex(t => t.id === id);
-    if (idx < 0) return;
+  closeTab(id: string, force = false) {
+    const tab = this.tabs.find(t => t.id === id);
+    if (!tab) return;
+
+    // Skip pinned tabs unless forced
+    if (tab.pinned && !force) return;
+
+    const idx = this.tabs.indexOf(tab);
 
     // Handle split mode pane removal
     if (this.splitMode) {
@@ -103,6 +115,51 @@ class TabStore {
         this.activeTabId = null;
       }
     }
+  }
+
+  closeAll() {
+    const toClose = this.tabs.filter(t => !t.pinned).map(t => t.id);
+    for (const id of toClose) this.closeTab(id);
+  }
+
+  closeOthers(keepId: string) {
+    const toClose = this.tabs.filter(t => t.id !== keepId && !t.pinned).map(t => t.id);
+    for (const id of toClose) this.closeTab(id);
+  }
+
+  togglePin(id: string) {
+    const tab = this.tabs.find(t => t.id === id);
+    if (tab) {
+      tab.pinned = !tab.pinned;
+      this.tabs = [...this.tabs]; // trigger reactivity
+    }
+  }
+
+  duplicateTab(id: string) {
+    const tab = this.tabs.find(t => t.id === id);
+    if (!tab) return;
+
+    const newId = uuidv4();
+    const copy: Tab = {
+      ...tab,
+      id: newId,
+      title: tab.title + ' (copy)',
+      pinned: false,
+    };
+    this.tabs.push(copy);
+    this.activeTabId = newId;
+
+    if (this.splitMode) {
+      if (this.activePaneId === 'right') {
+        this.rightPaneTabs = [...this.rightPaneTabs, newId];
+        this.activeRightTabId = newId;
+      } else {
+        this.leftPaneTabs = [...this.leftPaneTabs, newId];
+        this.activeLeftTabId = newId;
+      }
+    }
+
+    return newId;
   }
 
   setActive(id: string) {

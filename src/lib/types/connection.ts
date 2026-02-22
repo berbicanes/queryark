@@ -57,6 +57,8 @@ export interface ConnectionConfig {
   aws_region?: string;
   // Connection group
   group?: string;
+  // Connection color
+  color?: string;
 }
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';

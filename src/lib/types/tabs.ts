@@ -5,6 +5,7 @@ export interface Tab {
   type: TabType;
   title: string;
   connectionId: string;
+  pinned?: boolean;
   // For query tabs
   sql?: string;
   // For table/document/keyvalue/graph tabs

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { v4 as uuidv4 } from 'uuid';
   import { connectionStore } from '$lib/stores/connections.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
   import * as connectionService from '$lib/services/connectionService';
@@ -78,6 +79,19 @@
     }
   }
 
+  function ctxDuplicate() {
+    if (contextMenu) {
+      const original = contextMenu.connection.config;
+      const copy = {
+        ...original,
+        id: uuidv4(),
+        name: original.name + ' (copy)',
+      };
+      connectionService.saveConnection(copy);
+      closeContextMenu();
+    }
+  }
+
   function ctxMoveToGroup() {
     if (contextMenu) {
       groupInput = { connId: contextMenu.connection.config.id, value: contextMenu.connection.config.group ?? '' };
@@ -125,6 +139,7 @@
       <button
         class="connection-item"
         class:active={conn.config.id === connectionStore.activeConnectionId}
+        style={conn.config.color ? `border-left: 3px solid ${conn.config.color}; padding-left: 9px` : ''}
         onclick={() => handleClick(conn)}
         ondblclick={() => handleDblClick(conn)}
         oncontextmenu={(e) => handleContextMenu(e, conn)}
@@ -151,6 +166,7 @@
           <button
             class="connection-item"
             class:active={conn.config.id === connectionStore.activeConnectionId}
+            style={conn.config.color ? `border-left: 3px solid ${conn.config.color}; padding-left: 9px` : ''}
             onclick={() => handleClick(conn)}
             ondblclick={() => handleDblClick(conn)}
             oncontextmenu={(e) => handleContextMenu(e, conn)}
@@ -219,6 +235,13 @@
         <path d="M11 2l3 3-9 9H2v-3l9-9z" stroke="currentColor" stroke-width="1.2" fill="none"/>
       </svg>
       Edit
+    </button>
+    <button class="context-item" onclick={ctxDuplicate}>
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+        <rect x="5" y="5" width="9" height="9" rx="1" stroke="currentColor" stroke-width="1.2" fill="none"/>
+        <path d="M3 11V3a1 1 0 011-1h8" stroke="currentColor" stroke-width="1.2" fill="none"/>
+      </svg>
+      Duplicate
     </button>
     <div class="context-divider"></div>
     <button class="context-item" onclick={ctxMoveToGroup}>

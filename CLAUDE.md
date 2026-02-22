@@ -33,7 +33,7 @@ src/                          # Frontend (SvelteKit)
 │   │   ├── editor/           # SqlEditor (CodeMirror, multi-dialect)
 │   │   ├── grid/             # DataGrid, GridHeader, GridRow, GridCell, Pagination
 │   │   ├── modals/           # ConnectionModal, ConfirmDialog, CreateTableModal,
-│   │   │                     # AlterTableModal, IndexModal
+│   │   │                     # AlterTableModal, IndexModal, SettingsModal
 │   │   ├── sidebar/          # Sidebar, ConnectionList, SchemaTree, TreeNode
 │   │   ├── structure/        # TableStructure, ColumnsView, IndexesView, ForeignKeysView
 │   │   ├── tabs/             # TabBar, TabContent, QueryTab, TableTab,
@@ -147,10 +147,14 @@ npm run check            # TypeScript/Svelte type checking
 - Connection groups/folders with collapsible sidebar sections
 - Configurable keyboard shortcuts with shortcuts panel (Ctrl+K)
 - Tab drag-and-drop reordering with visual drop indicator
-- Tab context menu (Close, Close Others, Split Right)
+- Tab context menu (Close, Close Others, Close All, Duplicate, Pin/Unpin, Split Right)
+- Tab pinning — pinned tabs sorted left, close button hidden, survive Close All/Close Others
 - Split panes — view two tabs side by side with draggable divider
 - Command palette (Ctrl+P) — fuzzy search connections, tables, queries, actions
 - Sidebar collapse/expand (Ctrl+B)
+- Settings modal — editor/grid font sizes, default page size, confirm-before-delete toggle
+- Connection color coding — 8-color palette, colored sidebar border, colored tab stripe
+- Connection duplication — right-click → Duplicate creates copy with "(copy)" suffix
 
 ### Stub databases (feature-gated, not yet functional):
 - Oracle (`cargo build --features oracle` — requires Oracle Instant Client)
@@ -234,16 +238,16 @@ npm run check            # TypeScript/Svelte type checking
 - [ ] **Snowflake**: Implement full driver using snowflake-api crate (REST-based)
 - [ ] **BigQuery**: Implement full driver using gcp-bigquery-client crate (REST-based)
 
-### Phase 9: Global Shortcuts & Tab Management
-- [ ] **Global keyboard shortcuts**: Ctrl+N (new query tab), Ctrl+W (close tab), Ctrl+Tab/Ctrl+Shift+Tab (cycle tabs), Ctrl+S (save query), F5 (refresh schema), Ctrl+B (toggle sidebar)
-- [ ] **Tab context menu**: Right-click tabs for Close, Close Others, Close All, Duplicate, Pin/Unpin
-- [ ] **Tab pinning**: Pin tabs to prevent accidental closure, show pin icon, hide close button on pinned tabs
-- [ ] **Sidebar collapse**: Toggle sidebar visibility with Ctrl+B or toolbar button, smooth collapse/expand
+### Phase 9: Global Shortcuts & Tab Management ✅
+- [x] **Global keyboard shortcuts**: Ctrl+N (new query tab), Ctrl+W (close tab), Ctrl+Tab/Ctrl+Shift+Tab (cycle tabs), Ctrl+S (save query), F5 (refresh schema), Ctrl+B (toggle sidebar)
+- [x] **Tab context menu**: Right-click tabs for Close, Close Others, Close All, Duplicate, Pin/Unpin
+- [x] **Tab pinning**: Pin tabs to prevent accidental closure, show pin icon, hide close button on pinned tabs
+- [x] **Sidebar collapse**: Toggle sidebar visibility with Ctrl+B or toolbar button, smooth collapse/expand
 
-### Phase 10: Settings & Connection Enhancements
-- [ ] **Settings/Preferences modal**: Configurable editor font size, grid font size, default page size, confirm-before-delete toggle — persisted via plugin-store
-- [ ] **Connection color coding**: Assign colors to connections, show colored border in sidebar and colored stripe on tabs
-- [ ] **Connection duplication**: Right-click connection → Duplicate creates a copy with "(copy)" suffix
+### Phase 10: Settings & Connection Enhancements ✅
+- [x] **Settings/Preferences modal**: Configurable editor font size, grid font size, default page size, confirm-before-delete toggle — persisted via plugin-store
+- [x] **Connection color coding**: Assign colors to connections, show colored border in sidebar and colored stripe on tabs
+- [x] **Connection duplication**: Right-click connection → Duplicate creates a copy with "(copy)" suffix
 
 ### Phase 11: DDL Viewer & Type-Aware Editing
 - [ ] **DDL/Source viewer**: View CREATE TABLE DDL for any table in a dedicated sub-tab with read-only CodeMirror and copy button (PostgreSQL, MySQL, SQLite, MSSQL, ClickHouse + wrapper drivers)

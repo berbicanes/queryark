@@ -21,6 +21,7 @@
   import IndexModal from '$lib/components/modals/IndexModal.svelte';
   import ShortcutsModal from '$lib/components/modals/ShortcutsModal.svelte';
   import CommandPalette from '$lib/components/modals/CommandPalette.svelte';
+  import SettingsModal from '$lib/components/modals/SettingsModal.svelte';
 
   let lastExecutionTime = $state<number | null>(null);
   let lastRowCount = $state<number | null>(null);
@@ -187,6 +188,10 @@
 
 {#if uiStore.showCommandPalette}
   <CommandPalette />
+{/if}
+
+{#if uiStore.showSettingsModal}
+  <SettingsModal />
 {/if}
 
 {#if uiStore.errorMessage}
