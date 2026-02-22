@@ -169,14 +169,14 @@ npm run check            # TypeScript/Svelte type checking
 - [x] **Copy/paste**: Copy cells/rows to clipboard, paste support
 - [x] **Cell context menu**: Copy, paste, set NULL, copy as INSERT, filter by value
 
-### Phase 3: Query Editor Enhancements
-- [ ] **Schema-aware autocomplete**: Feed table/column names from schema cache into CodeMirror completions
-- [ ] **Query history**: Persist executed queries, searchable history panel
-- [ ] **Multi-statement execution**: Split by semicolons, execute sequentially, show multiple result sets
-- [ ] **Query formatting**: Auto-format SQL (integrate sql-formatter or similar)
-- [ ] **Error highlighting**: Mark the error position in the editor when a query fails
-- [ ] **Saved queries**: Save/load named queries per connection
-- [ ] **Comment/uncomment**: Ctrl+/ to toggle line comments
+### Phase 3: Query Editor Enhancements ✅
+- [x] **Schema-aware autocomplete**: Feed table/column names from schema cache into CodeMirror completions
+- [x] **Query history**: Persist executed queries, searchable history panel
+- [x] **Multi-statement execution**: Split by semicolons, execute sequentially, show multiple result sets
+- [x] **Query formatting**: Auto-format SQL (integrate sql-formatter or similar)
+- [x] **Error highlighting**: Mark the error position in the editor when a query fails
+- [x] **Saved queries**: Save/load named queries per connection
+- [x] **Comment/uncomment**: Ctrl+/ to toggle line comments
 
 ### Phase 4: Data Export & Import
 - [ ] **Export to CSV**: Export current result set or table data

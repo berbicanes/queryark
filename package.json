@@ -25,6 +25,7 @@
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-store": "^2.4.2",
     "codemirror": "^6.0.2",
+    "sql-formatter": "^15.7.2",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

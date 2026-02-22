@@ -3,6 +3,8 @@
   import { connectionStore } from '$lib/stores/connections.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
   import { tabStore } from '$lib/stores/tabs.svelte';
+  import { queryHistoryStore } from '$lib/stores/queryHistory.svelte';
+  import { savedQueriesStore } from '$lib/stores/savedQueries.svelte';
   import Toolbar from '$lib/components/Toolbar.svelte';
   import Sidebar from '$lib/components/sidebar/Sidebar.svelte';
   import TabBar from '$lib/components/tabs/TabBar.svelte';
@@ -16,6 +18,8 @@
 
   onMount(() => {
     connectionStore.init();
+    queryHistoryStore.init();
+    savedQueriesStore.init();
   });
 
   function handleQueryResult(detail: { executionTime: number; rowCount: number }) {

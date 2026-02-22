@@ -31,3 +31,30 @@ export interface FilterCondition {
   operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'contains' | 'starts_with' | 'is_null' | 'is_not_null';
   value: string;
 }
+
+export interface MultiStatementResult {
+  results: QueryResponse[];
+  error?: {
+    index: number;
+    message: string;
+  };
+}
+
+export interface QueryHistoryEntry {
+  id: string;
+  connectionId: string;
+  sql: string;
+  executedAt: number;
+  executionTimeMs: number;
+  rowCount: number;
+  error?: string;
+}
+
+export interface SavedQuery {
+  id: string;
+  name: string;
+  connectionId: string;
+  sql: string;
+  createdAt: number;
+  updatedAt: number;
+}

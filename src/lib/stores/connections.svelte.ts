@@ -17,7 +17,7 @@ class ConnectionStore {
   }
 
   async init() {
-    this.store = await load('connections.json', { autoSave: true });
+    this.store = await load('connections.json');
     const saved = await this.store.get<ConnectionConfig[]>('connections');
     if (saved) {
       this.connections = saved.map(config => ({
