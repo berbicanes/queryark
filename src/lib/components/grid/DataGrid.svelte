@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import type { ColumnDef, CellValue, SortColumn, FilterCondition } from '$lib/types/query';
   import { extractCellValue, isNull } from '$lib/utils/formatters';
   import GridHeader from './GridHeader.svelte';
@@ -65,13 +66,16 @@
   } | null>(null);
 
   // Initialize column widths and order when columns change
+  // Use untrack for columnWidths read to avoid a read-write reactive cycle
   $effect(() => {
+    const cols = columns;
+    const prevWidths = untrack(() => columnWidths);
     const newWidths: Record<string, number> = {};
-    for (const col of columns) {
-      newWidths[col.name] = columnWidths[col.name] ?? DEFAULT_COL_WIDTH;
+    for (const col of cols) {
+      newWidths[col.name] = prevWidths[col.name] ?? DEFAULT_COL_WIDTH;
     }
     columnWidths = newWidths;
-    columnOrder = columns.map((_, i) => i);
+    columnOrder = cols.map((_, i) => i);
   });
 
   // Reorder columns based on columnOrder

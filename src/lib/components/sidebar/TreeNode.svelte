@@ -28,8 +28,26 @@
   } = $props();
 
   let loading = $state(false);
+  let clickTimer: ReturnType<typeof setTimeout> | null = null;
 
-  async function handleClick() {
+  function handleClick() {
+    // If a dblclick handler exists, delay expand to avoid double-toggle on double-click
+    if (ondblclick) {
+      if (clickTimer) {
+        clearTimeout(clickTimer);
+        clickTimer = null;
+        return; // second click of double-click, skip
+      }
+      clickTimer = setTimeout(() => {
+        clickTimer = null;
+        performExpand();
+      }, 200);
+    } else {
+      performExpand();
+    }
+  }
+
+  async function performExpand() {
     if (expandable) {
       expanded = !expanded;
       if (onexpand) {
@@ -45,6 +63,10 @@
   }
 
   function handleDblClick() {
+    if (clickTimer) {
+      clearTimeout(clickTimer);
+      clickTimer = null;
+    }
     ondblclick?.();
   }
 </script>
