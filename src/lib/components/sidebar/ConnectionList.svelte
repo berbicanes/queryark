@@ -93,10 +93,12 @@
 </div>
 
 {#if contextMenu}
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
   <div
     class="context-menu"
     style="left: {contextMenu.x}px; top: {contextMenu.y}px"
     onclick={(e) => e.stopPropagation()}
+    onkeydown={(e) => { if (e.key === 'Escape') closeContextMenu(); }}
   >
     {#if contextMenu.connection.status !== 'connected'}
       <button class="context-item" onclick={ctxConnect}>

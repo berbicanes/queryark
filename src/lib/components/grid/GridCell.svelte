@@ -22,7 +22,7 @@
 
   let isEditing = $state(false);
   let editValue = $state('');
-  let inputEl: HTMLInputElement;
+  let inputEl = $state<HTMLInputElement | undefined>(undefined);
 
   let displayValue = $derived(extractCellValue(value));
   let cellIsNull = $derived(isNull(value));
@@ -78,6 +78,8 @@
   style="width: {width}px; min-width: {width}px; max-width: {width}px;"
   ondblclick={handleDblClick}
   oncontextmenu={handleContextMenu}
+  role="gridcell"
+  tabindex="-1"
 >
   {#if isEditing}
     <input

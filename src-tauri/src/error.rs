@@ -20,6 +20,7 @@ pub enum AppError {
     #[error("Query timed out after {0} seconds")]
     QueryTimeout(u64),
 
+    #[allow(dead_code)]
     #[error("Failed to connect to {db_type} at {host}: {cause}")]
     ConnectionFailed {
         db_type: String,

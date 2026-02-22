@@ -85,6 +85,7 @@
                 onclick={(e) => e.stopPropagation()}
               />
             {:else}
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
               <span
                 class="entry-name"
                 ondblclick={(e) => { e.stopPropagation(); startRename(query); }}

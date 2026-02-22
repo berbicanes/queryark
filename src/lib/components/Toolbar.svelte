@@ -66,8 +66,7 @@
   </div>
 
   <div class="toolbar-right">
-    <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
-    <div class="connection-selector" onclick={(e) => e.stopPropagation()}>
+    <div class="connection-selector">
       <button
         class="btn selector-btn"
         onclick={(e) => { e.stopPropagation(); showConnectionDropdown = !showConnectionDropdown; }}
@@ -88,8 +87,8 @@
       </button>
 
       {#if showConnectionDropdown}
-        <!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
-        <div class="dropdown" onclick={(e) => e.stopPropagation()}>
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div class="dropdown" onclick={(e) => e.stopPropagation()} onkeydown={(e) => { if (e.key === 'Escape') showConnectionDropdown = false; }}>
           {#if connectedConnections.length === 0}
             <div class="dropdown-empty">No connected databases</div>
           {:else}

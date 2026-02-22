@@ -19,7 +19,8 @@
     onqueryresult?: (detail: { executionTime: number; rowCount: number }) => void;
   } = $props();
 
-  let sqlValue = $state(tab.sql ?? '');
+  function getInitialSql() { return tab.sql ?? ''; }
+  let sqlValue = $state(getInitialSql());
   let results = $state<QueryResponse[]>([]);
   let isExecuting = $state(false);
   let errorMessage = $state<string | null>(null);
@@ -339,6 +340,7 @@
     </div>
   </div>
 
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <div
     class="split-handle"
     onmousedown={handleSplitMouseDown}

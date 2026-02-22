@@ -38,7 +38,7 @@
   const BUFFER_ROWS = 10;
   const DEFAULT_COL_WIDTH = 150;
 
-  let scrollContainer: HTMLDivElement;
+  let scrollContainer = $state<HTMLDivElement | undefined>(undefined);
   let gridWrapper: HTMLDivElement;
   let scrollTop = $state(0);
   let containerHeight = $state(400);

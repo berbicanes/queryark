@@ -204,11 +204,7 @@ npm run check            # TypeScript/Svelte type checking
 - [ ] **Table alteration**: Add/modify/drop columns through UI
 - [ ] **Index management**: Create/drop indexes through UI
 
-### Phase 7: Connection & UX Polish
-- [ ] **SSH tunneling**: Connect through SSH tunnel
-- [ ] **SSL certificate configuration**: CA cert, client cert, client key file pickers
-- [ ] **Connection URL input**: Parse and fill form from connection string
-- [ ] **Keychain integration**: Store passwords in OS keychain instead of plaintext
+### Phase 7: UX Polish
 - [ ] **Connection groups/folders**: Organize connections
 - [ ] **Light theme**: Add light theme option with theme toggle
 - [ ] **Keyboard shortcuts panel**: Show all shortcuts, allow customization
@@ -220,6 +216,72 @@ npm run check            # TypeScript/Svelte type checking
 - [ ] **Oracle**: Implement full driver using oracle crate (requires Oracle Instant Client)
 - [ ] **Snowflake**: Implement full driver using snowflake-api crate (REST-based)
 - [ ] **BigQuery**: Implement full driver using gcp-bigquery-client crate (REST-based)
+
+### Phase 9: Global Shortcuts & Tab Management
+- [ ] **Global keyboard shortcuts**: Ctrl+N (new query tab), Ctrl+W (close tab), Ctrl+Tab/Ctrl+Shift+Tab (cycle tabs), Ctrl+S (save query), F5 (refresh schema), Ctrl+B (toggle sidebar)
+- [ ] **Tab context menu**: Right-click tabs for Close, Close Others, Close All, Duplicate, Pin/Unpin
+- [ ] **Tab pinning**: Pin tabs to prevent accidental closure, show pin icon, hide close button on pinned tabs
+- [ ] **Sidebar collapse**: Toggle sidebar visibility with Ctrl+B or toolbar button, smooth collapse/expand
+
+### Phase 10: Settings & Connection Enhancements
+- [ ] **Settings/Preferences modal**: Configurable editor font size, grid font size, default page size, confirm-before-delete toggle — persisted via plugin-store
+- [ ] **Connection color coding**: Assign colors to connections, show colored border in sidebar and colored stripe on tabs
+- [ ] **Connection duplication**: Right-click connection → Duplicate creates a copy with "(copy)" suffix
+
+### Phase 11: DDL Viewer & Type-Aware Editing
+- [ ] **DDL/Source viewer**: View CREATE TABLE DDL for any table in a dedicated sub-tab with read-only CodeMirror and copy button (PostgreSQL, MySQL, SQLite, MSSQL, ClickHouse + wrapper drivers)
+- [ ] **Type-aware cell editing**: Boolean checkbox toggle, JSON textarea with monospace editing, auto-textarea for long text, NULL pill badge display
+- [ ] **NULL badge styling**: Replace italic NULL text with a styled pill badge for better visibility
+
+### Phase 12: Query Cancellation
+- [ ] **Query cancellation backend**: Cancellation tokens using tokio::select! with oneshot channels, QueryCancelled error variant
+- [ ] **Cancel button UI**: Show Cancel button next to spinner during query execution, call cancel_query command on click
+
+### Phase 13: Production Readiness
+- [ ] **Auto-update mechanism**: Integrate @tauri-apps/plugin-updater for in-app update notifications and automatic downloads
+- [ ] **Window state persistence**: Remember window size, position, sidebar width, and open tabs on restart using plugin-store
+- [ ] **Session restore**: Reopen last active tabs and connection on app launch
+- [ ] **Confirmation dialogs for destructive actions**: Confirm before DROP TABLE, bulk DELETE rows, disconnect with unsaved changes, close tabs with unsaved queries
+- [ ] **Empty states & onboarding**: First-launch experience with "Connect your first database" prompt, empty state illustrations for no connections/no tabs/no results
+- [ ] **About screen**: Version info, license, links to repo/docs/support
+- [ ] **App icon & branding**: Production app icon, splash screen, proper window title
+
+### Phase 14: Secure Connections
+- [ ] **SSH tunneling**: Connect through SSH tunnel (local port forwarding), UI fields for SSH host/port/user/key/password
+- [ ] **SSL certificate configuration**: CA cert, client cert, client key file pickers with Tauri file dialog
+- [ ] **Connection URL input**: Parse connection strings (postgres://, mysql://, mongodb://, redis://) and auto-fill form fields
+- [ ] **Keychain integration**: Store passwords in OS keychain (macOS Keychain, Windows Credential Manager, Linux Secret Service) instead of plaintext JSON
+
+### Phase 15: Large Dataset Handling
+- [ ] **Backend cursor/streaming**: Replace full result set loading with cursor-based pagination — fetch only the requested page from the database, not all rows into memory
+- [ ] **Virtual scrolling**: Render only visible rows in the data grid using a virtual scroll container, supporting 100K+ rows without DOM bloat
+- [ ] **Lazy column loading**: Defer loading of large text/blob columns until the cell is expanded or clicked
+- [ ] **Result set size limits**: Configurable max rows per query (default 10K), warn user when result exceeds limit, offer to export full result to file instead
+- [ ] **Connection pool tuning**: Configurable pool size per connection, idle timeout, connection recycling
+
+### Phase 16: Build & Distribution
+- [ ] **GitHub Actions CI/CD**: Automated build pipeline for macOS (universal binary: x64 + ARM), Windows (x64), and Linux (x64)
+- [ ] **Code signing — macOS**: Apple Developer certificate, notarization via `xcrun notarytool`, stapling, Gatekeeper-compatible DMG
+- [ ] **Code signing — Windows**: Authenticode signing with EV or OV certificate, SmartScreen reputation
+- [ ] **Installer packaging — macOS**: DMG with drag-to-Applications
+- [ ] **Installer packaging — Windows**: NSIS installer + MSI + portable .exe
+- [ ] **Installer packaging — Linux**: AppImage (universal), .deb (Debian/Ubuntu/Mint/Pop!_OS), .rpm (Fedora/RHEL/CentOS/openSUSE), .pacman (Arch/Manjaro), Flatpak (Flathub for all distros), Snap (Snapcraft store)
+- [ ] **Auto-updater backend**: GitHub Releases or custom update server endpoint for @tauri-apps/plugin-updater, JSON manifest with version/platform/signature
+- [ ] **Release automation**: Tag-triggered builds, changelog generation, draft GitHub Release with all platform artifacts attached
+
+### Phase 17: Product Website
+Separate repository — SvelteKit static site deployed to Vercel/Netlify/Cloudflare Pages.
+
+- [ ] **Landing page**: Hero section with tagline, app screenshot, and primary download CTA button that auto-detects visitor's OS (macOS/Windows/Linux)
+- [ ] **Feature showcase**: Sections highlighting key features — multi-database support (17 engines), query editor, data grid, inline editing, schema browser — with screenshots/GIFs
+- [ ] **Database grid**: Visual grid showing all 17 supported databases with icons and badges (similar to tableplus.com's supported databases section)
+- [ ] **Download page**: Dedicated /download page with all platform options listed — macOS (DMG), Windows (MSI, portable), Linux (AppImage, .deb, .rpm, .pacman, Flatpak, Snap) — with version number and file sizes
+- [ ] **Changelog page**: /changelog with version history, pulled from GitHub Releases or a markdown file
+- [ ] **Documentation**: /docs with getting started guide, connection setup per database, keyboard shortcuts reference, FAQ
+- [ ] **Pricing page**: /pricing if monetizing — free tier vs paid, feature comparison table, license purchase integration (Gumroad/Paddle/Stripe)
+- [ ] **SEO & metadata**: Open Graph tags, Twitter cards, structured data, sitemap.xml, robots.txt
+- [ ] **Analytics**: Privacy-friendly analytics (Plausible/Umami) for download counts and page views
+- [ ] **Responsive design**: Mobile-friendly layout for all pages, dark theme matching the app aesthetic
 
 ## Architecture Notes
 

@@ -155,6 +155,7 @@
         style="width: {w}px; min-width: {w}px; max-width: {w}px;"
         title="{col.name} ({col.data_type})"
         onclick={(e) => handleSortClick(col.name, e)}
+        onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleSortClick(col.name, e as unknown as MouseEvent); } }}
         draggable="true"
         ondragstart={(e) => handleDragStart(i, e)}
         ondragover={(e) => handleDragOver(i, e)}
@@ -184,6 +185,7 @@
             {/if}
           </span>
         {/if}
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <div
           class="resize-handle"
           onmousedown={(e) => handleResizeStart(col.name, e)}

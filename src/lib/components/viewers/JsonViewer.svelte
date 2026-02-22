@@ -7,8 +7,8 @@
     expanded?: boolean;
   } = $props();
 
-  let initialExpanded = depth < 2;
-  let isExpanded = $state(initialExpanded);
+  function getInitialExpanded() { return depth < 2; }
+  let isExpanded = $state(getInitialExpanded());
 
   function toggle() {
     isExpanded = !isExpanded;
