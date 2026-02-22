@@ -2,11 +2,22 @@
   import type { ColumnDef, CellValue } from '$lib/types/query';
   import { extractCellValue, isNull } from '$lib/utils/formatters';
 
-  let { value, column, editable = false, onEdit }: {
+  let {
+    value,
+    column,
+    width = 150,
+    editable = false,
+    onEdit,
+    onSetNull,
+    onContextMenu,
+  }: {
     value: CellValue;
     column: ColumnDef;
+    width?: number;
     editable?: boolean;
     onEdit?: (value: string) => void;
+    onSetNull?: () => void;
+    onContextMenu?: (e: MouseEvent) => void;
   } = $props();
 
   let isEditing = $state(false);
@@ -22,7 +33,6 @@
     if (!editable || !onEdit) return;
     isEditing = true;
     editValue = cellIsNull ? '' : displayValue;
-    // Focus on next tick
     requestAnimationFrame(() => {
       inputEl?.focus();
       inputEl?.select();
@@ -40,6 +50,11 @@
     isEditing = false;
   }
 
+  function handleSetNull() {
+    isEditing = false;
+    onSetNull?.();
+  }
+
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -49,6 +64,10 @@
       handleCancel();
     }
   }
+
+  function handleContextMenu(e: MouseEvent) {
+    onContextMenu?.(e);
+  }
 </script>
 
 <div
@@ -56,7 +75,9 @@
   class:null-value={cellIsNull}
   class:numeric={isNumeric}
   class:bool-value={isBool}
+  style="width: {width}px; min-width: {width}px; max-width: {width}px;"
   ondblclick={handleDblClick}
+  oncontextmenu={handleContextMenu}
 >
   {#if isEditing}
     <input
@@ -66,6 +87,13 @@
       onblur={handleSave}
       onkeydown={handleKeydown}
     />
+    {#if onSetNull}
+      <button
+        class="null-btn"
+        onmousedown={(e) => { e.preventDefault(); handleSetNull(); }}
+        title="Set NULL"
+      >NULL</button>
+    {/if}
   {:else}
     <span class="cell-text truncate">{displayValue}</span>
   {/if}
@@ -76,14 +104,13 @@
     display: flex;
     align-items: center;
     padding: 0 10px;
-    min-width: 120px;
-    max-width: 300px;
-    flex: 1;
+    flex: none;
     border-right: 1px solid rgba(69, 71, 90, 0.3);
     overflow: hidden;
     cursor: default;
     font-size: 12px;
     font-family: var(--font-mono);
+    gap: 4px;
   }
 
   .grid-cell.null-value .cell-text {
@@ -103,10 +130,14 @@
   .cell-text {
     max-width: 100%;
     line-height: 32px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .cell-input {
-    width: 100%;
+    flex: 1;
+    min-width: 0;
     height: 28px;
     padding: 2px 6px;
     font-size: 12px;
@@ -116,5 +147,24 @@
     border: 1px solid var(--accent);
     border-radius: 2px;
     outline: none;
+  }
+
+  .null-btn {
+    flex-shrink: 0;
+    padding: 2px 6px;
+    font-size: 9px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 2px;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  .null-btn:hover {
+    color: var(--text-primary);
+    background: var(--bg-hover);
   }
 </style>

@@ -4,7 +4,8 @@
   import { connectionStore } from '$lib/stores/connections.svelte';
   import * as queryService from '$lib/services/queryService';
   import type { Tab } from '$lib/types/tabs';
-  import type { QueryResponse } from '$lib/types/query';
+  import type { QueryResponse, SortColumn, CellValue } from '$lib/types/query';
+  import { extractCellValue } from '$lib/utils/formatters';
   import SqlEditor from '$lib/components/editor/SqlEditor.svelte';
   import DataGrid from '$lib/components/grid/DataGrid.svelte';
 
@@ -18,8 +19,11 @@
   let isExecuting = $state(false);
   let errorMessage = $state<string | null>(null);
 
+  // Client-side sorting for query results
+  let sortColumns = $state<SortColumn[]>([]);
+
   // Resizable split
-  let splitRatio = $state(0.45); // top panel takes 45%
+  let splitRatio = $state(0.45);
   let isResizing = $state(false);
   let containerEl: HTMLDivElement;
 
@@ -27,6 +31,38 @@
   let dialect = $derived.by(() => {
     const conn = connectionStore.connections.find(c => c.config.id === tab.connectionId);
     return conn?.config.db_type ?? 'PostgreSQL';
+  });
+
+  // Sort rows client-side
+  let sortedRows = $derived.by(() => {
+    if (!result || sortColumns.length === 0) return result?.rows ?? [];
+
+    const rows = [...result.rows];
+    rows.sort((a, b) => {
+      for (const sort of sortColumns) {
+        const colIdx = result!.columns.findIndex(c => c.name === sort.column);
+        if (colIdx === -1) continue;
+
+        const aVal = extractCellValue(a[colIdx]);
+        const bVal = extractCellValue(b[colIdx]);
+
+        // Try numeric comparison
+        const aNum = Number(aVal);
+        const bNum = Number(bVal);
+        let cmp: number;
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          cmp = aNum - bNum;
+        } else {
+          cmp = aVal.localeCompare(bVal);
+        }
+
+        if (cmp !== 0) {
+          return sort.direction === 'DESC' ? -cmp : cmp;
+        }
+      }
+      return 0;
+    });
+    return rows;
   });
 
   async function executeQuery() {
@@ -40,6 +76,7 @@
       const response = await queryService.executeQuery(tab.connectionId, sqlValue);
       if (response) {
         result = response;
+        sortColumns = [];
         onqueryresult?.({
           executionTime: response.execution_time_ms,
           rowCount: response.row_count
@@ -51,8 +88,11 @@
       isExecuting = false;
     }
 
-    // Persist SQL to tab
     tabStore.updateTabSql(tab.id, sqlValue);
+  }
+
+  function handleSort(sorts: SortColumn[]) {
+    sortColumns = sorts;
   }
 
   function handleSplitMouseDown(e: MouseEvent) {
@@ -71,7 +111,6 @@
     isResizing = false;
   }
 
-  // Listen for global execute event from toolbar
   function handleGlobalExecute() {
     if (tabStore.activeTabId === tab.id) {
       executeQuery();
@@ -123,7 +162,12 @@
         <span>{errorMessage}</span>
       </div>
     {:else if result}
-      <DataGrid columns={result.columns} rows={result.rows} />
+      <DataGrid
+        columns={result.columns}
+        rows={sortedRows}
+        {sortColumns}
+        onSort={handleSort}
+      />
     {:else}
       <div class="empty-state">
         <span class="text-muted">Run a query to see results</span>

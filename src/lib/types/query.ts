@@ -20,3 +20,14 @@ export interface QueryResponse {
   execution_time_ms: number;
   affected_rows: number | null;
 }
+
+export interface SortColumn {
+  column: string;
+  direction: 'ASC' | 'DESC';
+}
+
+export interface FilterCondition {
+  column: string;
+  operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'contains' | 'starts_with' | 'is_null' | 'is_not_null';
+  value: string;
+}

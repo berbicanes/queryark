@@ -3,7 +3,7 @@
   import * as tauri from '$lib/services/tauri';
   import { uiStore } from '$lib/stores/ui.svelte';
   import type { Tab } from '$lib/types/tabs';
-  import type { QueryResponse } from '$lib/types/query';
+  import type { QueryResponse, SortColumn, FilterCondition } from '$lib/types/query';
   import DataGrid from '$lib/components/grid/DataGrid.svelte';
   import Pagination from '$lib/components/grid/Pagination.svelte';
   import TableStructure from '$lib/components/structure/TableStructure.svelte';
@@ -20,6 +20,10 @@
   let currentPage = $state(1);
   let pageSize = $state(50);
 
+  // Sort & filter state
+  let sortColumns = $state<SortColumn[]>([]);
+  let filters = $state<FilterCondition[]>([]);
+
   let offset = $derived((currentPage - 1) * pageSize);
 
   async function loadData() {
@@ -27,7 +31,10 @@
 
     isLoading = true;
     try {
-      const response = await tauri.getTableData(tab.connectionId, tab.schema, tab.table, pageSize, offset);
+      const response = await tauri.getTableData(
+        tab.connectionId, tab.schema, tab.table,
+        pageSize, offset, sortColumns, filters
+      );
       result = response;
       onqueryresult?.({
         executionTime: response.execution_time_ms,
@@ -44,7 +51,7 @@
   async function loadTotalRows() {
     if (!tab.schema || !tab.table) return;
     try {
-      totalRows = await tauri.getRowCount(tab.connectionId, tab.schema, tab.table);
+      totalRows = await tauri.getRowCount(tab.connectionId, tab.schema, tab.table, filters);
     } catch {
       totalRows = 0;
     }
@@ -59,6 +66,68 @@
     pageSize = size;
     currentPage = 1;
     loadData();
+  }
+
+  function handleSort(sorts: SortColumn[]) {
+    sortColumns = sorts;
+    currentPage = 1;
+    loadData();
+  }
+
+  function handleFiltersChange(newFilters: FilterCondition[]) {
+    filters = newFilters;
+    currentPage = 1;
+    loadData();
+    loadTotalRows();
+  }
+
+  function handleFilterByValue(column: string, value: string) {
+    // Add or replace a filter for this column
+    const newFilters = filters.filter(f => f.column !== column);
+    newFilters.push({ column, operator: 'eq', value });
+    filters = newFilters;
+    currentPage = 1;
+    loadData();
+    loadTotalRows();
+  }
+
+  function handleCellEdit(rowIndex: number, colIndex: number, value: string) {
+    if (!result || !tab.schema || !tab.table) return;
+    const columns = result.columns;
+    const row = result.rows[rowIndex];
+    if (!row) return;
+
+    // Use first column as PK (simplistic — matches existing behavior)
+    const pkColumns = [columns[0].name];
+    const pkCell = row[0];
+    const pkValues = [pkCell.type === 'Null' ? '' : ('value' in pkCell ? String(pkCell.value) : '')];
+    const column = columns[colIndex].name;
+
+    tauri.updateCell(tab.connectionId, tab.schema, tab.table, column, value, pkColumns, pkValues)
+      .then(() => loadData())
+      .catch(err => {
+        const message = err instanceof Error ? err.message : String(err);
+        uiStore.showError(`Failed to update cell: ${message}`);
+      });
+  }
+
+  function handleCellSetNull(rowIndex: number, colIndex: number) {
+    if (!result || !tab.schema || !tab.table) return;
+    const columns = result.columns;
+    const row = result.rows[rowIndex];
+    if (!row) return;
+
+    const pkColumns = [columns[0].name];
+    const pkCell = row[0];
+    const pkValues = [pkCell.type === 'Null' ? '' : ('value' in pkCell ? String(pkCell.value) : '')];
+    const column = columns[colIndex].name;
+
+    tauri.updateCell(tab.connectionId, tab.schema, tab.table, column, '', pkColumns, pkValues, true)
+      .then(() => loadData())
+      .catch(err => {
+        const message = err instanceof Error ? err.message : String(err);
+        uiStore.showError(`Failed to set NULL: ${message}`);
+      });
   }
 
   onMount(() => {
@@ -104,7 +173,20 @@
           </div>
         {:else if result}
           <div class="grid-wrapper">
-            <DataGrid columns={result.columns} rows={result.rows} />
+            <DataGrid
+              columns={result.columns}
+              rows={result.rows}
+              editable={true}
+              schema={tab.schema}
+              table={tab.table}
+              {sortColumns}
+              {filters}
+              onCellEdit={handleCellEdit}
+              onCellSetNull={handleCellSetNull}
+              onSort={handleSort}
+              onFiltersChange={handleFiltersChange}
+              onFilterByValue={handleFilterByValue}
+            />
           </div>
           <Pagination
             {currentPage}

@@ -7,12 +7,115 @@ use tokio::time::timeout;
 use crate::db::pool::PoolManager;
 use crate::error::AppError;
 use crate::models::connection::DatabaseCategory;
-use crate::models::query::QueryResponse;
+use crate::models::query::{FilterCondition, QueryResponse, SortColumn};
 use crate::models::schema::{
     ColumnInfo, ContainerInfo, FieldInfo, ForeignKeyInfo, IndexInfo, ItemInfo, SchemaInfo, TableInfo,
 };
 
 const DEFAULT_DATA_TIMEOUT: Duration = Duration::from_secs(30);
+
+// === Helpers ===
+
+/// Quote an identifier based on database category.
+/// MSSQL uses [name], MySQL uses `name`, everything else uses "name".
+fn quote_ident(name: &str, category: &DatabaseCategory) -> String {
+    match category {
+        DatabaseCategory::Relational => {
+            // We can't distinguish MSSQL from PG here by category alone,
+            // so we use double quotes which work for PG, SQLite, CockroachDB, Redshift.
+            // MSSQL also supports double-quoted identifiers when QUOTED_IDENTIFIER is ON (default).
+            format!("\"{}\"", name.replace('"', "\"\""))
+        }
+        DatabaseCategory::Analytics => {
+            // ClickHouse uses double quotes
+            format!("\"{}\"", name.replace('"', "\"\""))
+        }
+        DatabaseCategory::WideColumn => {
+            // Cassandra/ScyllaDB use double quotes
+            format!("\"{}\"", name.replace('"', "\"\""))
+        }
+        _ => format!("\"{}\"", name.replace('"', "\"\"")),
+    }
+}
+
+/// Escape a string value for SQL (double single quotes).
+fn escape_sql_string(value: &str) -> String {
+    value.replace('\'', "''")
+}
+
+/// Build a WHERE clause from filter conditions.
+fn build_where_clause(filters: &[FilterCondition], category: &DatabaseCategory) -> String {
+    if filters.is_empty() {
+        return String::new();
+    }
+
+    let conditions: Vec<String> = filters
+        .iter()
+        .filter_map(|f| {
+            let col = quote_ident(&f.column, category);
+            match f.operator.as_str() {
+                "eq" => Some(format!("{} = '{}'", col, escape_sql_string(&f.value))),
+                "neq" => Some(format!("{} != '{}'", col, escape_sql_string(&f.value))),
+                "gt" => Some(format!("{} > '{}'", col, escape_sql_string(&f.value))),
+                "gte" => Some(format!("{} >= '{}'", col, escape_sql_string(&f.value))),
+                "lt" => Some(format!("{} < '{}'", col, escape_sql_string(&f.value))),
+                "lte" => Some(format!("{} <= '{}'", col, escape_sql_string(&f.value))),
+                "contains" => Some(format!(
+                    "{} LIKE '%{}%'",
+                    col,
+                    escape_sql_string(&f.value).replace('%', "\\%")
+                )),
+                "starts_with" => Some(format!(
+                    "{} LIKE '{}%'",
+                    col,
+                    escape_sql_string(&f.value).replace('%', "\\%")
+                )),
+                "is_null" => Some(format!("{} IS NULL", col)),
+                "is_not_null" => Some(format!("{} IS NOT NULL", col)),
+                _ => None,
+            }
+        })
+        .collect();
+
+    if conditions.is_empty() {
+        return String::new();
+    }
+
+    format!(" WHERE {}", conditions.join(" AND "))
+}
+
+/// Build an ORDER BY clause from sort columns.
+fn build_order_by(sorts: &[SortColumn], category: &DatabaseCategory) -> String {
+    if sorts.is_empty() {
+        return String::new();
+    }
+
+    let clauses: Vec<String> = sorts
+        .iter()
+        .map(|s| {
+            let dir = if s.direction == "DESC" { "DESC" } else { "ASC" };
+            format!("{} {}", quote_ident(&s.column, category), dir)
+        })
+        .collect();
+
+    format!(" ORDER BY {}", clauses.join(", "))
+}
+
+/// Build a WHERE clause from pk_columns and pk_values.
+fn build_pk_where(pk_columns: &[String], pk_values: &[String], category: &DatabaseCategory) -> String {
+    pk_columns
+        .iter()
+        .zip(pk_values.iter())
+        .map(|(col, val)| {
+            format!(
+                "{} = '{}'",
+                quote_ident(col, category),
+                escape_sql_string(val)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(" AND ")
+}
 
 // === Generic commands (all database types) ===
 
@@ -163,12 +266,51 @@ pub async fn get_table_data(
     table: String,
     limit: i64,
     offset: i64,
+    sort_columns: Option<Vec<SortColumn>>,
+    filters: Option<Vec<FilterCondition>>,
     pool_manager: State<'_, PoolManager>,
 ) -> Result<QueryResponse, AppError> {
     debug!("Loading table data for '{}'.'{}'.'{}'", connection_id, schema, table);
     let handle = pool_manager.get(&connection_id).await?;
     let driver = handle.as_sql()?;
 
+    let has_sorts = sort_columns.as_ref().map_or(false, |s| !s.is_empty());
+    let has_filters = filters.as_ref().map_or(false, |f| !f.is_empty());
+
+    if has_sorts || has_filters {
+        let category = handle.base().category();
+        let qualified_table = format!(
+            "{}.{}",
+            quote_ident(&schema, &category),
+            quote_ident(&table, &category)
+        );
+
+        let where_clause = if has_filters {
+            build_where_clause(filters.as_ref().unwrap(), &category)
+        } else {
+            String::new()
+        };
+
+        let order_clause = if has_sorts {
+            build_order_by(sort_columns.as_ref().unwrap(), &category)
+        } else {
+            String::new()
+        };
+
+        let sql = format!(
+            "SELECT * FROM {}{}{} LIMIT {} OFFSET {}",
+            qualified_table, where_clause, order_clause, limit, offset
+        );
+
+        return timeout(DEFAULT_DATA_TIMEOUT, handle.base().execute_raw(&sql))
+            .await
+            .map_err(|_| {
+                error!("get_table_data timed out for '{}'.'{}'.'{}'", connection_id, schema, table);
+                AppError::QueryTimeout(DEFAULT_DATA_TIMEOUT.as_secs())
+            })?;
+    }
+
+    // Fallback to driver method (no sort/filter)
     timeout(
         DEFAULT_DATA_TIMEOUT,
         driver.get_table_data(&schema, &table, limit, offset),
@@ -185,10 +327,40 @@ pub async fn get_row_count(
     connection_id: String,
     schema: String,
     table: String,
+    filters: Option<Vec<FilterCondition>>,
     pool_manager: State<'_, PoolManager>,
 ) -> Result<i64, AppError> {
     let handle = pool_manager.get(&connection_id).await?;
     let driver = handle.as_sql()?;
+
+    let has_filters = filters.as_ref().map_or(false, |f| !f.is_empty());
+
+    if has_filters {
+        let category = handle.base().category();
+        let qualified_table = format!(
+            "{}.{}",
+            quote_ident(&schema, &category),
+            quote_ident(&table, &category)
+        );
+
+        let where_clause = build_where_clause(filters.as_ref().unwrap(), &category);
+        let sql = format!("SELECT COUNT(*) as count FROM {}{}", qualified_table, where_clause);
+
+        let result = handle.base().execute_raw(&sql).await?;
+        if let Some(first_row) = result.rows.first() {
+            if let Some(cell) = first_row.first() {
+                return match cell {
+                    crate::models::query::CellValue::Int(v) => Ok(*v),
+                    crate::models::query::CellValue::Text(v) => {
+                        v.parse::<i64>().map_err(|_| AppError::Database("Invalid count value".to_string()))
+                    }
+                    _ => Ok(0),
+                };
+            }
+        }
+        return Ok(0);
+    }
+
     driver.get_row_count(&schema, &table).await
 }
 
@@ -201,10 +373,26 @@ pub async fn update_cell(
     value: String,
     pk_columns: Vec<String>,
     pk_values: Vec<String>,
+    is_null: Option<bool>,
     pool_manager: State<'_, PoolManager>,
 ) -> Result<(), AppError> {
     info!("Updating cell in '{}'.'{}'.'{}'.'{}'", connection_id, schema, table, column);
     let handle = pool_manager.get(&connection_id).await?;
+
+    if is_null.unwrap_or(false) {
+        let category = handle.base().category();
+        let where_clause = build_pk_where(&pk_columns, &pk_values, &category);
+        let sql = format!(
+            "UPDATE {}.{} SET {} = NULL WHERE {}",
+            quote_ident(&schema, &category),
+            quote_ident(&table, &category),
+            quote_ident(&column, &category),
+            where_clause
+        );
+        handle.base().execute_raw(&sql).await?;
+        return Ok(());
+    }
+
     let driver = handle.as_sql()?;
     driver
         .update_cell(&schema, &table, &column, &value, pk_columns, pk_values)

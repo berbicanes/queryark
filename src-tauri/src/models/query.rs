@@ -27,3 +27,16 @@ pub struct QueryResponse {
     pub execution_time_ms: u64,
     pub affected_rows: Option<u64>,
 }
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SortColumn {
+    pub column: String,
+    pub direction: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct FilterCondition {
+    pub column: String,
+    pub operator: String,
+    pub value: String,
+}

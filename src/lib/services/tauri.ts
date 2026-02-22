@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { ConnectionConfig, DatabaseCategory } from '$lib/types/connection';
-import type { QueryResponse } from '$lib/types/query';
+import type { QueryResponse, SortColumn, FilterCondition } from '$lib/types/query';
 import type {
   SchemaInfo, TableInfo, ColumnInfo, IndexInfo, ForeignKeyInfo,
   ContainerInfo, ItemInfo, FieldInfo
@@ -74,16 +74,23 @@ export async function getForeignKeys(connectionId: string, schema: string, table
   return invoke<ForeignKeyInfo[]>('get_foreign_keys', { connectionId, schema, table });
 }
 
-export async function getTableData(connectionId: string, schema: string, table: string, limit: number, offset: number): Promise<QueryResponse> {
-  return invoke<QueryResponse>('get_table_data', { connectionId, schema, table, limit, offset });
+export async function getTableData(connectionId: string, schema: string, table: string, limit: number, offset: number, sortColumns?: SortColumn[], filters?: FilterCondition[]): Promise<QueryResponse> {
+  return invoke<QueryResponse>('get_table_data', {
+    connectionId, schema, table, limit, offset,
+    sortColumns: sortColumns && sortColumns.length > 0 ? sortColumns : null,
+    filters: filters && filters.length > 0 ? filters : null,
+  });
 }
 
-export async function getRowCount(connectionId: string, schema: string, table: string): Promise<number> {
-  return invoke<number>('get_row_count', { connectionId, schema, table });
+export async function getRowCount(connectionId: string, schema: string, table: string, filters?: FilterCondition[]): Promise<number> {
+  return invoke<number>('get_row_count', {
+    connectionId, schema, table,
+    filters: filters && filters.length > 0 ? filters : null,
+  });
 }
 
-export async function updateCell(connectionId: string, schema: string, table: string, column: string, value: string, pkColumns: string[], pkValues: string[]): Promise<void> {
-  return invoke<void>('update_cell', { connectionId, schema, table, column, value, pkColumns, pkValues });
+export async function updateCell(connectionId: string, schema: string, table: string, column: string, value: string, pkColumns: string[], pkValues: string[], isNull?: boolean): Promise<void> {
+  return invoke<void>('update_cell', { connectionId, schema, table, column, value, pkColumns, pkValues, isNull: isNull ?? null });
 }
 
 export async function insertRow(connectionId: string, schema: string, table: string, columns: string[], values: string[]): Promise<void> {
