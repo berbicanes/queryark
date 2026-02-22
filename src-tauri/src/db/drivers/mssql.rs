@@ -10,7 +10,8 @@ use crate::error::AppError;
 use crate::models::connection::{ConnectionConfig, DatabaseCategory};
 use crate::models::query::{CellValue, ColumnDef, QueryResponse};
 use crate::models::schema::{
-    ColumnInfo, ContainerInfo, FieldInfo, ForeignKeyInfo, IndexInfo, ItemInfo, SchemaInfo, TableInfo,
+    ColumnInfo, ContainerInfo, FieldInfo, ForeignKeyInfo, IndexInfo, ItemInfo,
+    RoutineInfo, SchemaInfo, TableInfo,
 };
 
 pub struct MssqlDriver {
@@ -532,5 +533,54 @@ impl SqlDriver for MssqlDriver {
         }
 
         Ok(total_affected)
+    }
+
+    async fn get_routines(&self, schema: &str) -> Result<Vec<RoutineInfo>, AppError> {
+        let sql = format!(
+            "SELECT o.name, o.type, \
+                    CASE o.type \
+                        WHEN 'P' THEN 'PROCEDURE' \
+                        WHEN 'FN' THEN 'FUNCTION' \
+                        WHEN 'IF' THEN 'FUNCTION' \
+                        WHEN 'TF' THEN 'FUNCTION' \
+                        ELSE 'FUNCTION' \
+                    END AS routine_type, \
+                    TYPE_NAME(ISNULL( \
+                        (SELECT TOP 1 p.user_type_id FROM sys.parameters p WHERE p.object_id = o.object_id AND p.parameter_id = 0), \
+                        NULL \
+                    )) AS return_type \
+             FROM sys.objects o \
+             JOIN sys.schemas s ON o.schema_id = s.schema_id \
+             WHERE s.name = '{}' AND o.type IN ('P','FN','IF','TF') \
+             ORDER BY o.name",
+            schema.replace('\'', "''")
+        );
+        let (_, rows) = self.query_rows(&sql).await?;
+
+        let routines = rows
+            .iter()
+            .filter_map(|row| {
+                let name = match row.get(0) {
+                    Some(CellValue::Text(v)) => v.clone(),
+                    _ => return None,
+                };
+                let routine_type = match row.get(2) {
+                    Some(CellValue::Text(v)) => v.clone(),
+                    _ => "FUNCTION".to_string(),
+                };
+                let return_type = match row.get(3) {
+                    Some(CellValue::Text(v)) => Some(v.clone()),
+                    _ => None,
+                };
+                Some(RoutineInfo {
+                    name,
+                    schema: schema.to_string(),
+                    routine_type,
+                    return_type,
+                })
+            })
+            .collect();
+
+        Ok(routines)
     }
 }

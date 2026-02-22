@@ -11,7 +11,8 @@ use crate::error::AppError;
 use crate::models::connection::{ConnectionConfig, DatabaseCategory};
 use crate::models::query::QueryResponse;
 use crate::models::schema::{
-    ColumnInfo, ContainerInfo, FieldInfo, ForeignKeyInfo, IndexInfo, ItemInfo, SchemaInfo, TableInfo,
+    ColumnInfo, ContainerInfo, FieldInfo, ForeignKeyInfo, IndexInfo, ItemInfo,
+    RoutineInfo, SchemaInfo, TableInfo, TableStats,
 };
 
 pub struct MySqlDriver {
@@ -448,5 +449,93 @@ impl SqlDriver for MySqlDriver {
         }
 
         Ok(total_affected)
+    }
+
+    async fn get_table_stats(&self, schema: &str, table: &str) -> Result<TableStats, AppError> {
+        let row = sqlx::query(
+            "SELECT TABLE_ROWS, DATA_LENGTH, INDEX_LENGTH \
+             FROM information_schema.TABLES \
+             WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?",
+        )
+        .bind(schema)
+        .bind(table)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        match row {
+            Some(row) => {
+                let row_count: Option<i64> = row.try_get("TABLE_ROWS").ok();
+                let data_length: Option<i64> = row.try_get("DATA_LENGTH").ok();
+                let index_length: Option<i64> = row.try_get("INDEX_LENGTH").ok();
+
+                let size_bytes = match (data_length, index_length) {
+                    (Some(d), Some(i)) => Some(d + i),
+                    (Some(d), None) => Some(d),
+                    _ => None,
+                };
+
+                let size_display = size_bytes.map(format_bytes);
+
+                Ok(TableStats {
+                    row_count: row_count.unwrap_or(0),
+                    size_bytes,
+                    size_display,
+                })
+            }
+            None => {
+                let count = self.get_row_count(schema, table).await?;
+                Ok(TableStats {
+                    row_count: count,
+                    size_bytes: None,
+                    size_display: None,
+                })
+            }
+        }
+    }
+
+    async fn get_routines(&self, schema: &str) -> Result<Vec<RoutineInfo>, AppError> {
+        let rows = sqlx::query(
+            "SELECT ROUTINE_NAME, ROUTINE_TYPE, DTD_IDENTIFIER \
+             FROM information_schema.ROUTINES \
+             WHERE ROUTINE_SCHEMA = ? \
+             ORDER BY ROUTINE_NAME",
+        )
+        .bind(schema)
+        .fetch_all(&self.pool)
+        .await?;
+
+        let routines = rows
+            .iter()
+            .map(|row| {
+                let name: String = row.get("ROUTINE_NAME");
+                let routine_type: String = row.get("ROUTINE_TYPE");
+                let return_type: Option<String> = row.get("DTD_IDENTIFIER");
+                RoutineInfo {
+                    name,
+                    schema: schema.to_string(),
+                    routine_type,
+                    return_type,
+                }
+            })
+            .collect();
+
+        Ok(routines)
+    }
+}
+
+fn format_bytes(bytes: i64) -> String {
+    const KB: f64 = 1024.0;
+    const MB: f64 = KB * 1024.0;
+    const GB: f64 = MB * 1024.0;
+
+    let b = bytes as f64;
+    if b >= GB {
+        format!("{:.1} GB", b / GB)
+    } else if b >= MB {
+        format!("{:.1} MB", b / MB)
+    } else if b >= KB {
+        format!("{:.1} KB", b / KB)
+    } else {
+        format!("{} B", bytes)
     }
 }

@@ -1,4 +1,8 @@
-import type { SchemaInfo, TableInfo, ColumnInfo, IndexInfo, ForeignKeyInfo, ContainerInfo, ItemInfo, FieldInfo } from '$lib/types/schema';
+import type {
+  SchemaInfo, TableInfo, ColumnInfo, IndexInfo, ForeignKeyInfo,
+  ContainerInfo, ItemInfo, FieldInfo,
+  TableStats, RoutineInfo, SequenceInfo, EnumInfo
+} from '$lib/types/schema';
 
 interface SchemaCache {
   schemas: SchemaInfo[];
@@ -6,6 +10,10 @@ interface SchemaCache {
   columns: Record<string, ColumnInfo[]>; // "schema.table" -> columns
   indexes: Record<string, IndexInfo[]>; // "schema.table" -> indexes
   foreignKeys: Record<string, ForeignKeyInfo[]>; // "schema.table" -> fks
+  tableStats: Record<string, TableStats>; // "schema.table" -> stats
+  routines: Record<string, RoutineInfo[]>; // schemaName -> routines
+  sequences: Record<string, SequenceInfo[]>; // schemaName -> sequences
+  enums: Record<string, EnumInfo[]>; // schemaName -> enums
 }
 
 interface BrowserCache {
@@ -15,7 +23,10 @@ interface BrowserCache {
 }
 
 function emptySchemaCache(): SchemaCache {
-  return { schemas: [], tables: {}, columns: {}, indexes: {}, foreignKeys: {} };
+  return {
+    schemas: [], tables: {}, columns: {}, indexes: {}, foreignKeys: {},
+    tableStats: {}, routines: {}, sequences: {}, enums: {},
+  };
 }
 
 function emptyBrowserCache(): BrowserCache {
@@ -25,6 +36,7 @@ function emptyBrowserCache(): BrowserCache {
 class SchemaStore {
   cache = $state<Record<string, SchemaCache>>({}); // connectionId -> SchemaCache
   browserCache = $state<Record<string, BrowserCache>>({}); // connectionId -> BrowserCache
+  lastRefreshed = $state<Record<string, number>>({}); // connectionId -> timestamp
 
   // SQL-specific getters
   getSchemas(connectionId: string): SchemaInfo[] {
@@ -48,6 +60,23 @@ class SchemaStore {
   getForeignKeys(connectionId: string, schemaName: string, tableName: string): ForeignKeyInfo[] {
     const key = `${schemaName}.${tableName}`;
     return this.cache[connectionId]?.foreignKeys[key] ?? [];
+  }
+
+  getTableStats(connectionId: string, schemaName: string, tableName: string): TableStats | null {
+    const key = `${schemaName}.${tableName}`;
+    return this.cache[connectionId]?.tableStats[key] ?? null;
+  }
+
+  getRoutines(connectionId: string, schemaName: string): RoutineInfo[] {
+    return this.cache[connectionId]?.routines[schemaName] ?? [];
+  }
+
+  getSequences(connectionId: string, schemaName: string): SequenceInfo[] {
+    return this.cache[connectionId]?.sequences[schemaName] ?? [];
+  }
+
+  getEnums(connectionId: string, schemaName: string): EnumInfo[] {
+    return this.cache[connectionId]?.enums[schemaName] ?? [];
   }
 
   // SQL-specific setters
@@ -86,6 +115,34 @@ class SchemaStore {
     this.cache[connectionId].foreignKeys[`${schemaName}.${tableName}`] = fks;
   }
 
+  setTableStats(connectionId: string, schemaName: string, tableName: string, stats: TableStats) {
+    if (!this.cache[connectionId]) {
+      this.cache[connectionId] = emptySchemaCache();
+    }
+    this.cache[connectionId].tableStats[`${schemaName}.${tableName}`] = stats;
+  }
+
+  setRoutines(connectionId: string, schemaName: string, routines: RoutineInfo[]) {
+    if (!this.cache[connectionId]) {
+      this.cache[connectionId] = emptySchemaCache();
+    }
+    this.cache[connectionId].routines[schemaName] = routines;
+  }
+
+  setSequences(connectionId: string, schemaName: string, sequences: SequenceInfo[]) {
+    if (!this.cache[connectionId]) {
+      this.cache[connectionId] = emptySchemaCache();
+    }
+    this.cache[connectionId].sequences[schemaName] = sequences;
+  }
+
+  setEnums(connectionId: string, schemaName: string, enums: EnumInfo[]) {
+    if (!this.cache[connectionId]) {
+      this.cache[connectionId] = emptySchemaCache();
+    }
+    this.cache[connectionId].enums[schemaName] = enums;
+  }
+
   // Generic getters
   getContainers(connectionId: string): ContainerInfo[] {
     return this.browserCache[connectionId]?.containers ?? [];
@@ -122,9 +179,14 @@ class SchemaStore {
     this.browserCache[connectionId].fields[`${container}.${item}`] = fields;
   }
 
+  setLastRefreshed(connectionId: string) {
+    this.lastRefreshed[connectionId] = Date.now();
+  }
+
   clearConnection(connectionId: string) {
     delete this.cache[connectionId];
     delete this.browserCache[connectionId];
+    delete this.lastRefreshed[connectionId];
   }
 }
 

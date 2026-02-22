@@ -3,7 +3,8 @@ import type { ConnectionConfig, DatabaseCategory } from '$lib/types/connection';
 import type { QueryResponse, SortColumn, FilterCondition } from '$lib/types/query';
 import type {
   SchemaInfo, TableInfo, ColumnInfo, IndexInfo, ForeignKeyInfo,
-  ContainerInfo, ItemInfo, FieldInfo
+  ContainerInfo, ItemInfo, FieldInfo,
+  TableStats, RoutineInfo, SequenceInfo, EnumInfo
 } from '$lib/types/schema';
 
 // Connection management
@@ -99,6 +100,23 @@ export async function insertRow(connectionId: string, schema: string, table: str
 
 export async function deleteRows(connectionId: string, schema: string, table: string, pkColumns: string[], pkValuesList: string[][]): Promise<number> {
   return invoke<number>('delete_rows', { connectionId, schema, table, pkColumns, pkValuesList });
+}
+
+// Phase 5: Schema browser additions
+export async function getTableStats(connectionId: string, schema: string, table: string): Promise<TableStats> {
+  return invoke<TableStats>('get_table_stats', { connectionId, schema, table });
+}
+
+export async function getRoutines(connectionId: string, schema: string): Promise<RoutineInfo[]> {
+  return invoke<RoutineInfo[]>('get_routines', { connectionId, schema });
+}
+
+export async function getSequences(connectionId: string, schema: string): Promise<SequenceInfo[]> {
+  return invoke<SequenceInfo[]>('get_sequences', { connectionId, schema });
+}
+
+export async function getEnums(connectionId: string, schema: string): Promise<EnumInfo[]> {
+  return invoke<EnumInfo[]>('get_enums', { connectionId, schema });
 }
 
 // Document operations (MongoDB, DynamoDB)

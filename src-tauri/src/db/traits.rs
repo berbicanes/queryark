@@ -4,7 +4,8 @@ use crate::error::AppError;
 use crate::models::connection::DatabaseCategory;
 use crate::models::query::QueryResponse;
 use crate::models::schema::{
-    ColumnInfo, ContainerInfo, FieldInfo, ForeignKeyInfo, IndexInfo, ItemInfo, SchemaInfo, TableInfo,
+    ColumnInfo, ContainerInfo, EnumInfo, FieldInfo, ForeignKeyInfo, IndexInfo, ItemInfo,
+    RoutineInfo, SchemaInfo, SequenceInfo, TableInfo, TableStats,
 };
 
 /// Base trait implemented by all 17 database drivers.
@@ -93,6 +94,27 @@ pub trait SqlDriver: DbDriver {
         pk_columns: Vec<String>,
         pk_values_list: Vec<Vec<String>>,
     ) -> Result<u64, AppError>;
+
+    async fn get_table_stats(&self, schema: &str, table: &str) -> Result<TableStats, AppError> {
+        let count = self.get_row_count(schema, table).await?;
+        Ok(TableStats {
+            row_count: count,
+            size_bytes: None,
+            size_display: None,
+        })
+    }
+
+    async fn get_routines(&self, _schema: &str) -> Result<Vec<RoutineInfo>, AppError> {
+        Ok(Vec::new())
+    }
+
+    async fn get_sequences(&self, _schema: &str) -> Result<Vec<SequenceInfo>, AppError> {
+        Ok(Vec::new())
+    }
+
+    async fn get_enums(&self, _schema: &str) -> Result<Vec<EnumInfo>, AppError> {
+        Ok(Vec::new())
+    }
 }
 
 /// Trait for document databases (MongoDB, DynamoDB).

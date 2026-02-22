@@ -1,6 +1,8 @@
 <script lang="ts">
   import { connectionStore } from '$lib/stores/connections.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
+  import { DB_METADATA } from '$lib/types/database';
+  import * as schemaService from '$lib/services/schemaService';
   import ConnectionList from './ConnectionList.svelte';
   import SchemaTree from './SchemaTree.svelte';
 
@@ -11,8 +13,29 @@
   let activeConnection = $derived(connectionStore.activeConnection);
   let isConnected = $derived(activeConnection?.status === 'connected');
 
+  let refreshing = $state(false);
+
   function handleAddConnection() {
     uiStore.openConnectionModal();
+  }
+
+  async function handleRefresh() {
+    const connId = connectionStore.activeConnectionId;
+    if (!connId) return;
+    refreshing = true;
+    try {
+      const conn = connectionStore.connections.find(c => c.config.id === connId);
+      if (!conn) return;
+      const cat = DB_METADATA[conn.config.db_type].category;
+      const isSqlLike = cat === 'Relational' || cat === 'Analytics' || cat === 'WideColumn';
+      if (isSqlLike) {
+        await schemaService.refreshSchema(connId);
+      } else {
+        await schemaService.refreshContainers(connId);
+      }
+    } finally {
+      refreshing = false;
+    }
   }
 
   function onMouseDown(e: MouseEvent) {
@@ -56,6 +79,18 @@
       <div class="schema-section">
         <div class="section-header">
           <span class="section-title">Schema</span>
+          <button
+            class="btn btn-sm refresh-btn"
+            class:spinning={refreshing}
+            onclick={handleRefresh}
+            title="Refresh schema"
+            disabled={refreshing}
+          >
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+              <path d="M14 8A6 6 0 1 1 8 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M8 0l3 2-3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
         </div>
         <SchemaTree connectionId={connectionStore.activeConnectionId} />
       </div>
@@ -137,6 +172,25 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: var(--text-muted);
+  }
+
+  .refresh-btn {
+    color: var(--text-secondary);
+    padding: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  .refresh-btn:hover {
+    color: var(--accent);
+    background: var(--bg-hover);
+  }
+
+  .refresh-btn.spinning svg {
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 
   .resize-handle {

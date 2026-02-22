@@ -6,7 +6,8 @@ use crate::error::AppError;
 use crate::models::connection::{ConnectionConfig, DatabaseCategory};
 use crate::models::query::QueryResponse;
 use crate::models::schema::{
-    ColumnInfo, ContainerInfo, FieldInfo, ForeignKeyInfo, IndexInfo, ItemInfo, SchemaInfo, TableInfo,
+    ColumnInfo, ContainerInfo, EnumInfo, FieldInfo, ForeignKeyInfo, IndexInfo, ItemInfo,
+    RoutineInfo, SchemaInfo, SequenceInfo, TableInfo, TableStats,
 };
 
 /// Amazon Redshift driver — wrapper around PostgresDriver with Redshift-specific metadata queries.
@@ -103,5 +104,21 @@ impl SqlDriver for RedshiftDriver {
 
     async fn delete_rows(&self, schema: &str, table: &str, pk_columns: Vec<String>, pk_values_list: Vec<Vec<String>>) -> Result<u64, AppError> {
         self.inner.delete_rows(schema, table, pk_columns, pk_values_list).await
+    }
+
+    async fn get_table_stats(&self, schema: &str, table: &str) -> Result<TableStats, AppError> {
+        self.inner.get_table_stats(schema, table).await
+    }
+
+    async fn get_routines(&self, schema: &str) -> Result<Vec<RoutineInfo>, AppError> {
+        self.inner.get_routines(schema).await
+    }
+
+    async fn get_sequences(&self, schema: &str) -> Result<Vec<SequenceInfo>, AppError> {
+        self.inner.get_sequences(schema).await
+    }
+
+    async fn get_enums(&self, schema: &str) -> Result<Vec<EnumInfo>, AppError> {
+        self.inner.get_enums(schema).await
     }
 }

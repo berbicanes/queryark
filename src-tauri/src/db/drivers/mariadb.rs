@@ -6,7 +6,8 @@ use crate::error::AppError;
 use crate::models::connection::{ConnectionConfig, DatabaseCategory};
 use crate::models::query::QueryResponse;
 use crate::models::schema::{
-    ColumnInfo, ContainerInfo, FieldInfo, ForeignKeyInfo, IndexInfo, ItemInfo, SchemaInfo, TableInfo,
+    ColumnInfo, ContainerInfo, FieldInfo, ForeignKeyInfo, IndexInfo, ItemInfo,
+    RoutineInfo, SchemaInfo, TableInfo, TableStats,
 };
 
 /// MariaDB driver — thin wrapper around MySqlDriver since MariaDB is MySQL-compatible.
@@ -92,5 +93,13 @@ impl SqlDriver for MariaDbDriver {
 
     async fn delete_rows(&self, schema: &str, table: &str, pk_columns: Vec<String>, pk_values_list: Vec<Vec<String>>) -> Result<u64, AppError> {
         self.inner.delete_rows(schema, table, pk_columns, pk_values_list).await
+    }
+
+    async fn get_table_stats(&self, schema: &str, table: &str) -> Result<TableStats, AppError> {
+        self.inner.get_table_stats(schema, table).await
+    }
+
+    async fn get_routines(&self, schema: &str) -> Result<Vec<RoutineInfo>, AppError> {
+        self.inner.get_routines(schema).await
     }
 }

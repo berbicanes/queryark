@@ -186,14 +186,14 @@ npm run check            # TypeScript/Svelte type checking
 - [ ] **Import CSV**: Bulk load data from CSV files
 - [ ] **Copy as**: Copy selected rows as CSV/JSON/INSERT/Markdown
 
-### Phase 5: Schema Browser Improvements
-- [ ] **Views**: Show views separately from tables in the tree
-- [ ] **Functions/Procedures**: List stored functions and procedures
-- [ ] **Sequences**: Show sequences (PostgreSQL)
-- [ ] **Enums/Types**: Show custom types (PostgreSQL)
-- [ ] **Search**: Filter/search within the schema tree
-- [ ] **Table stats**: Show row count and size in tree tooltips
-- [ ] **Refresh**: Manual and auto-refresh for schema tree
+### Phase 5: Schema Browser Improvements ✅
+- [x] **Views**: Show views separately from tables in the tree
+- [x] **Functions/Procedures**: List stored functions and procedures
+- [x] **Sequences**: Show sequences (PostgreSQL)
+- [x] **Enums/Types**: Show custom types (PostgreSQL)
+- [x] **Search**: Filter/search within the schema tree
+- [x] **Table stats**: Show row count and size in tree tooltips
+- [x] **Refresh**: Manual and auto-refresh for schema tree
 
 ### Phase 6: Advanced Database Operations
 - [ ] **Transaction support**: BEGIN/COMMIT/ROLLBACK controls in the UI

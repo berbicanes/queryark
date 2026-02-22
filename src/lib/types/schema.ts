@@ -58,3 +58,29 @@ export interface ForeignKeyInfo {
   on_update: string;
   on_delete: string;
 }
+
+// Phase 5: Schema browser additions
+export interface TableStats {
+  row_count: number;
+  size_bytes: number | null;
+  size_display: string | null;
+}
+
+export interface RoutineInfo {
+  name: string;
+  schema: string;
+  routine_type: string;
+  return_type: string | null;
+}
+
+export interface SequenceInfo {
+  name: string;
+  schema: string;
+  data_type: string | null;
+}
+
+export interface EnumInfo {
+  name: string;
+  schema: string;
+  variants: string[];
+}

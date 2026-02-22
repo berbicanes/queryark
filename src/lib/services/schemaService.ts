@@ -1,7 +1,11 @@
 import * as tauri from '$lib/services/tauri';
 import { schemaStore } from '$lib/stores/schema.svelte';
 import { uiStore } from '$lib/stores/ui.svelte';
-import type { SchemaInfo, TableInfo, ColumnInfo, IndexInfo, ForeignKeyInfo, ContainerInfo, ItemInfo, FieldInfo } from '$lib/types/schema';
+import type {
+  SchemaInfo, TableInfo, ColumnInfo, IndexInfo, ForeignKeyInfo,
+  ContainerInfo, ItemInfo, FieldInfo,
+  TableStats, RoutineInfo, SequenceInfo, EnumInfo
+} from '$lib/types/schema';
 
 // SQL-specific loaders
 export async function loadSchemas(connectionId: string): Promise<SchemaInfo[]> {
@@ -71,6 +75,59 @@ export async function loadForeignKeys(connectionId: string, schemaName: string, 
   }
 }
 
+// Phase 5: New loaders
+export async function loadTableStats(connectionId: string, schemaName: string, tableName: string): Promise<TableStats | null> {
+  const cached = schemaStore.getTableStats(connectionId, schemaName, tableName);
+  if (cached) return cached;
+
+  try {
+    const stats = await tauri.getTableStats(connectionId, schemaName, tableName);
+    schemaStore.setTableStats(connectionId, schemaName, tableName, stats);
+    return stats;
+  } catch {
+    return null;
+  }
+}
+
+export async function loadRoutines(connectionId: string, schemaName: string): Promise<RoutineInfo[]> {
+  const cached = schemaStore.getRoutines(connectionId, schemaName);
+  if (cached.length > 0) return cached;
+
+  try {
+    const routines = await tauri.getRoutines(connectionId, schemaName);
+    schemaStore.setRoutines(connectionId, schemaName, routines);
+    return routines;
+  } catch {
+    return [];
+  }
+}
+
+export async function loadSequences(connectionId: string, schemaName: string): Promise<SequenceInfo[]> {
+  const cached = schemaStore.getSequences(connectionId, schemaName);
+  if (cached.length > 0) return cached;
+
+  try {
+    const sequences = await tauri.getSequences(connectionId, schemaName);
+    schemaStore.setSequences(connectionId, schemaName, sequences);
+    return sequences;
+  } catch {
+    return [];
+  }
+}
+
+export async function loadEnums(connectionId: string, schemaName: string): Promise<EnumInfo[]> {
+  const cached = schemaStore.getEnums(connectionId, schemaName);
+  if (cached.length > 0) return cached;
+
+  try {
+    const enums = await tauri.getEnums(connectionId, schemaName);
+    schemaStore.setEnums(connectionId, schemaName, enums);
+    return enums;
+  } catch {
+    return [];
+  }
+}
+
 // Generic loaders (all database types)
 export async function loadContainers(connectionId: string): Promise<ContainerInfo[]> {
   try {
@@ -113,10 +170,12 @@ export async function loadFields(connectionId: string, container: string, item: 
 
 export function refreshSchema(connectionId: string) {
   schemaStore.clearConnection(connectionId);
+  schemaStore.setLastRefreshed(connectionId);
   return loadSchemas(connectionId);
 }
 
 export function refreshContainers(connectionId: string) {
   schemaStore.clearConnection(connectionId);
+  schemaStore.setLastRefreshed(connectionId);
   return loadContainers(connectionId);
 }

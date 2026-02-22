@@ -37,6 +37,10 @@ pub fn run() {
             commands::schema::update_cell,
             commands::schema::insert_row,
             commands::schema::delete_rows,
+            commands::schema::get_table_stats,
+            commands::schema::get_routines,
+            commands::schema::get_sequences,
+            commands::schema::get_enums,
             // Document operations (MongoDB, DynamoDB)
             commands::document::insert_document,
             commands::document::update_document,

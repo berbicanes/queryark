@@ -7,6 +7,8 @@
     expandable = false,
     expanded = $bindable(false),
     depth = 0,
+    tooltip = '',
+    suffix = '',
     onclick,
     ondblclick,
     onexpand,
@@ -17,6 +19,8 @@
     expandable?: boolean;
     expanded?: boolean;
     depth?: number;
+    tooltip?: string;
+    suffix?: string;
     onclick?: () => void;
     ondblclick?: () => void;
     onexpand?: (expanded: boolean) => void;
@@ -49,6 +53,7 @@
   <button
     class="node-row"
     style="padding-left: {8 + depth * 16}px"
+    title={tooltip || undefined}
     onclick={handleClick}
     ondblclick={handleDblClick}
   >
@@ -70,6 +75,10 @@
     {/if}
 
     <span class="node-label truncate">{label}</span>
+
+    {#if suffix}
+      <span class="node-suffix">{suffix}</span>
+    {/if}
 
     {#if loading}
       <span class="node-spinner"></span>
@@ -143,6 +152,13 @@
   .node-label {
     flex: 1;
     min-width: 0;
+  }
+
+  .node-suffix {
+    flex-shrink: 0;
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-left: 4px;
   }
 
   .node-spinner {

@@ -11,7 +11,8 @@ use crate::error::AppError;
 use crate::models::connection::{ConnectionConfig, DatabaseCategory};
 use crate::models::query::QueryResponse;
 use crate::models::schema::{
-    ColumnInfo, ContainerInfo, FieldInfo, ForeignKeyInfo, IndexInfo, ItemInfo, SchemaInfo, TableInfo,
+    ColumnInfo, ContainerInfo, EnumInfo, FieldInfo, ForeignKeyInfo, IndexInfo, ItemInfo,
+    RoutineInfo, SchemaInfo, SequenceInfo, TableInfo, TableStats,
 };
 
 pub struct PostgresDriver {
@@ -466,5 +467,144 @@ impl SqlDriver for PostgresDriver {
         }
 
         Ok(total_affected)
+    }
+
+    async fn get_table_stats(&self, schema: &str, table: &str) -> Result<TableStats, AppError> {
+        let row = sqlx::query(
+            "SELECT c.reltuples::bigint AS row_count, \
+                    pg_total_relation_size(c.oid) AS size_bytes \
+             FROM pg_class c \
+             JOIN pg_namespace n ON n.oid = c.relnamespace \
+             WHERE n.nspname = $1 AND c.relname = $2",
+        )
+        .bind(schema)
+        .bind(table)
+        .fetch_optional(&self.pool)
+        .await?;
+
+        match row {
+            Some(row) => {
+                let row_count: i64 = row.get("row_count");
+                let size_bytes: i64 = row.get("size_bytes");
+                let size_display = format_bytes(size_bytes);
+                Ok(TableStats {
+                    row_count: if row_count < 0 { 0 } else { row_count },
+                    size_bytes: Some(size_bytes),
+                    size_display: Some(size_display),
+                })
+            }
+            None => {
+                let count = self.get_row_count(schema, table).await?;
+                Ok(TableStats {
+                    row_count: count,
+                    size_bytes: None,
+                    size_display: None,
+                })
+            }
+        }
+    }
+
+    async fn get_routines(&self, schema: &str) -> Result<Vec<RoutineInfo>, AppError> {
+        let rows = sqlx::query(
+            "SELECT routine_name, routine_type, data_type \
+             FROM information_schema.routines \
+             WHERE routine_schema = $1 \
+             ORDER BY routine_name",
+        )
+        .bind(schema)
+        .fetch_all(&self.pool)
+        .await?;
+
+        let routines = rows
+            .iter()
+            .map(|row| {
+                let name: String = row.get("routine_name");
+                let routine_type: String = row.get("routine_type");
+                let return_type: Option<String> = row.get("data_type");
+                RoutineInfo {
+                    name,
+                    schema: schema.to_string(),
+                    routine_type,
+                    return_type,
+                }
+            })
+            .collect();
+
+        Ok(routines)
+    }
+
+    async fn get_sequences(&self, schema: &str) -> Result<Vec<SequenceInfo>, AppError> {
+        let rows = sqlx::query(
+            "SELECT sequence_name, data_type \
+             FROM information_schema.sequences \
+             WHERE sequence_schema = $1 \
+             ORDER BY sequence_name",
+        )
+        .bind(schema)
+        .fetch_all(&self.pool)
+        .await?;
+
+        let sequences = rows
+            .iter()
+            .map(|row| {
+                let name: String = row.get("sequence_name");
+                let data_type: Option<String> = row.get("data_type");
+                SequenceInfo {
+                    name,
+                    schema: schema.to_string(),
+                    data_type,
+                }
+            })
+            .collect();
+
+        Ok(sequences)
+    }
+
+    async fn get_enums(&self, schema: &str) -> Result<Vec<EnumInfo>, AppError> {
+        let rows = sqlx::query(
+            "SELECT t.typname AS name, \
+                    array_agg(e.enumlabel ORDER BY e.enumsortorder) AS variants \
+             FROM pg_type t \
+             JOIN pg_enum e ON e.enumtypid = t.oid \
+             JOIN pg_namespace n ON n.oid = t.typnamespace \
+             WHERE n.nspname = $1 \
+             GROUP BY t.typname \
+             ORDER BY t.typname",
+        )
+        .bind(schema)
+        .fetch_all(&self.pool)
+        .await?;
+
+        let enums = rows
+            .iter()
+            .map(|row| {
+                let name: String = row.get("name");
+                let variants: Vec<String> = row.get("variants");
+                EnumInfo {
+                    name,
+                    schema: schema.to_string(),
+                    variants,
+                }
+            })
+            .collect();
+
+        Ok(enums)
+    }
+}
+
+fn format_bytes(bytes: i64) -> String {
+    const KB: f64 = 1024.0;
+    const MB: f64 = KB * 1024.0;
+    const GB: f64 = MB * 1024.0;
+
+    let b = bytes as f64;
+    if b >= GB {
+        format!("{:.1} GB", b / GB)
+    } else if b >= MB {
+        format!("{:.1} MB", b / MB)
+    } else if b >= KB {
+        format!("{:.1} KB", b / KB)
+    } else {
+        format!("{} B", bytes)
     }
 }

@@ -71,6 +71,37 @@ pub struct ForeignKeyInfo {
     pub on_delete: String,
 }
 
+// === Phase 5: Schema browser additions ===
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TableStats {
+    pub row_count: i64,
+    pub size_bytes: Option<i64>,
+    pub size_display: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RoutineInfo {
+    pub name: String,
+    pub schema: String,
+    pub routine_type: String,
+    pub return_type: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SequenceInfo {
+    pub name: String,
+    pub schema: String,
+    pub data_type: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EnumInfo {
+    pub name: String,
+    pub schema: String,
+    pub variants: Vec<String>,
+}
+
 // Conversion helpers
 impl From<&SchemaInfo> for ContainerInfo {
     fn from(s: &SchemaInfo) -> Self {

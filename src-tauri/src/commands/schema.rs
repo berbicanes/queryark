@@ -9,7 +9,8 @@ use crate::error::AppError;
 use crate::models::connection::DatabaseCategory;
 use crate::models::query::{FilterCondition, QueryResponse, SortColumn};
 use crate::models::schema::{
-    ColumnInfo, ContainerInfo, FieldInfo, ForeignKeyInfo, IndexInfo, ItemInfo, SchemaInfo, TableInfo,
+    ColumnInfo, ContainerInfo, EnumInfo, FieldInfo, ForeignKeyInfo, IndexInfo, ItemInfo,
+    RoutineInfo, SchemaInfo, SequenceInfo, TableInfo, TableStats,
 };
 
 const DEFAULT_DATA_TIMEOUT: Duration = Duration::from_secs(30);
@@ -432,4 +433,55 @@ pub async fn delete_rows(
     driver
         .delete_rows(&schema, &table, pk_columns, pk_values_list)
         .await
+}
+
+// === Phase 5: Schema browser commands ===
+
+#[tauri::command]
+pub async fn get_table_stats(
+    connection_id: String,
+    schema: String,
+    table: String,
+    pool_manager: State<'_, PoolManager>,
+) -> Result<TableStats, AppError> {
+    debug!("Loading table stats for '{}'.'{}'.'{}'", connection_id, schema, table);
+    let handle = pool_manager.get(&connection_id).await?;
+    let driver = handle.as_sql()?;
+    driver.get_table_stats(&schema, &table).await
+}
+
+#[tauri::command]
+pub async fn get_routines(
+    connection_id: String,
+    schema: String,
+    pool_manager: State<'_, PoolManager>,
+) -> Result<Vec<RoutineInfo>, AppError> {
+    debug!("Loading routines for '{}'.'{}'", connection_id, schema);
+    let handle = pool_manager.get(&connection_id).await?;
+    let driver = handle.as_sql()?;
+    driver.get_routines(&schema).await
+}
+
+#[tauri::command]
+pub async fn get_sequences(
+    connection_id: String,
+    schema: String,
+    pool_manager: State<'_, PoolManager>,
+) -> Result<Vec<SequenceInfo>, AppError> {
+    debug!("Loading sequences for '{}'.'{}'", connection_id, schema);
+    let handle = pool_manager.get(&connection_id).await?;
+    let driver = handle.as_sql()?;
+    driver.get_sequences(&schema).await
+}
+
+#[tauri::command]
+pub async fn get_enums(
+    connection_id: String,
+    schema: String,
+    pool_manager: State<'_, PoolManager>,
+) -> Result<Vec<EnumInfo>, AppError> {
+    debug!("Loading enums for '{}'.'{}'", connection_id, schema);
+    let handle = pool_manager.get(&connection_id).await?;
+    let driver = handle.as_sql()?;
+    driver.get_enums(&schema).await
 }
