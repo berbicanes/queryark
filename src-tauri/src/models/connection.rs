@@ -78,6 +78,31 @@ pub struct ConnectionConfig {
     // AWS region for DynamoDB
     #[serde(default)]
     pub aws_region: Option<String>,
+    // SSH tunneling
+    #[serde(default)]
+    pub ssh_enabled: bool,
+    #[serde(default)]
+    pub ssh_host: Option<String>,
+    #[serde(default)]
+    pub ssh_port: Option<u16>,
+    #[serde(default)]
+    pub ssh_user: Option<String>,
+    #[serde(default)]
+    pub ssh_password: Option<String>,
+    #[serde(default)]
+    pub ssh_key_path: Option<String>,
+    #[serde(default)]
+    pub ssh_passphrase: Option<String>,
+    // SSL certificates
+    #[serde(default)]
+    pub ssl_ca_cert: Option<String>,
+    #[serde(default)]
+    pub ssl_client_cert: Option<String>,
+    #[serde(default)]
+    pub ssl_client_key: Option<String>,
+    // OS keychain
+    #[serde(default)]
+    pub use_keychain: bool,
 }
 
 impl DatabaseType {
@@ -124,7 +149,7 @@ impl ConnectionConfig {
         match self.db_type {
             DatabaseType::PostgreSQL | DatabaseType::CockroachDB | DatabaseType::Redshift => {
                 let ssl_mode = if self.use_ssl { "require" } else { "disable" };
-                format!(
+                let mut url = format!(
                     "postgres://{}:{}@{}:{}/{}?sslmode={}",
                     self.username_or_default(),
                     self.password_or_default(),
@@ -132,23 +157,45 @@ impl ConnectionConfig {
                     self.port_or_default(),
                     self.database_or_default(),
                     ssl_mode
-                )
+                );
+                if let Some(ref ca) = self.ssl_ca_cert {
+                    url.push_str(&format!("&sslrootcert={}", ca));
+                }
+                if let Some(ref cert) = self.ssl_client_cert {
+                    url.push_str(&format!("&sslcert={}", cert));
+                }
+                if let Some(ref key) = self.ssl_client_key {
+                    url.push_str(&format!("&sslkey={}", key));
+                }
+                url
             }
             DatabaseType::MySQL | DatabaseType::MariaDB => {
-                let ssl_mode = if self.use_ssl {
-                    "?ssl-mode=REQUIRED"
-                } else {
-                    ""
-                };
-                format!(
-                    "mysql://{}:{}@{}:{}/{}{}",
+                let mut url = format!(
+                    "mysql://{}:{}@{}:{}/{}",
                     self.username_or_default(),
                     self.password_or_default(),
                     self.host_or_default(),
                     self.port_or_default(),
                     self.database_or_default(),
-                    ssl_mode
-                )
+                );
+                let mut params: Vec<String> = Vec::new();
+                if self.use_ssl {
+                    params.push("ssl-mode=REQUIRED".to_string());
+                }
+                if let Some(ref ca) = self.ssl_ca_cert {
+                    params.push(format!("ssl-ca={}", ca));
+                }
+                if let Some(ref cert) = self.ssl_client_cert {
+                    params.push(format!("ssl-cert={}", cert));
+                }
+                if let Some(ref key) = self.ssl_client_key {
+                    params.push(format!("ssl-key={}", key));
+                }
+                if !params.is_empty() {
+                    url.push('?');
+                    url.push_str(&params.join("&"));
+                }
+                url
             }
             DatabaseType::SQLite => {
                 if let Some(ref path) = self.file_path {

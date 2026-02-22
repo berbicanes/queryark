@@ -17,9 +17,27 @@ pub struct MongoDbDriver {
 impl MongoDbDriver {
     pub async fn connect(config: &ConnectionConfig) -> Result<Self, AppError> {
         let url = config.to_connection_url();
-        let options = ClientOptions::parse(&url)
+        let mut options = ClientOptions::parse(&url)
             .await
             .map_err(|e| AppError::Database(format!("Failed to parse MongoDB URL: {}", e)))?;
+
+        // Configure TLS with custom certificates if provided
+        if config.ssl_ca_cert.is_some() || config.ssl_client_cert.is_some() {
+            let mut tls_options = mongodb::options::TlsOptions::default();
+
+            if let Some(ref ca_path) = config.ssl_ca_cert {
+                tls_options.ca_file_path = Some(std::path::PathBuf::from(ca_path));
+            }
+            if let Some(ref cert_path) = config.ssl_client_cert {
+                tls_options.cert_key_file_path = Some(std::path::PathBuf::from(cert_path));
+            }
+
+            options.tls = Some(mongodb::options::Tls::Enabled(tls_options));
+        } else if config.use_ssl {
+            options.tls = Some(mongodb::options::Tls::Enabled(
+                mongodb::options::TlsOptions::default(),
+            ));
+        }
 
         let client = Client::with_options(options)
             .map_err(|e| AppError::Database(format!("Failed to create MongoDB client: {}", e)))?;

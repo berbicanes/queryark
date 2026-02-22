@@ -188,6 +188,23 @@ export async function getNodes(connectionId: string, label: string, limit: numbe
   return invoke<QueryResponse>('get_nodes', { connectionId, label, limit, skip });
 }
 
+// Keychain operations
+export async function storeKeychainPassword(connectionId: string, password: string): Promise<void> {
+  return invoke<void>('store_keychain_password', { connectionId, password });
+}
+
+export async function getKeychainPassword(connectionId: string): Promise<string | null> {
+  return invoke<string | null>('get_keychain_password', { connectionId });
+}
+
+export async function deleteKeychainPassword(connectionId: string): Promise<void> {
+  return invoke<void>('delete_keychain_password', { connectionId });
+}
+
+export async function checkKeychainAvailable(): Promise<boolean> {
+  return invoke<boolean>('check_keychain_available');
+}
+
 // Export/Import operations
 export async function exportToCsv(
   filePath: string, columns: ColumnDef[], rows: CellValue[][],

@@ -55,6 +55,20 @@ export interface ConnectionConfig {
   cloud_auth?: CloudAuth;
   // AWS
   aws_region?: string;
+  // SSH tunneling
+  ssh_enabled?: boolean;
+  ssh_host?: string;
+  ssh_port?: number;
+  ssh_user?: string;
+  ssh_password?: string;
+  ssh_key_path?: string;
+  ssh_passphrase?: string;
+  // SSL certificates
+  ssl_ca_cert?: string;
+  ssl_client_cert?: string;
+  ssl_client_key?: string;
+  // OS keychain
+  use_keychain?: boolean;
   // Connection group
   group?: string;
   // Connection color

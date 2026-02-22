@@ -5,6 +5,7 @@ mod models;
 
 use db::cancel::CancellationRegistry;
 use db::pool::PoolManager;
+use db::tunnel::TunnelManager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -14,6 +15,7 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .manage(PoolManager::new())
         .manage(CancellationRegistry::new())
+        .manage(TunnelManager::new())
         .invoke_handler(tauri::generate_handler![
             // Connection management
             commands::connection::connect_db,
@@ -64,6 +66,11 @@ pub fn run() {
             commands::transaction::begin_transaction,
             commands::transaction::commit_transaction,
             commands::transaction::rollback_transaction,
+            // Keychain
+            commands::keychain::store_keychain_password,
+            commands::keychain::get_keychain_password,
+            commands::keychain::delete_keychain_password,
+            commands::keychain::check_keychain_available,
             // Export/Import
             commands::export::export_to_csv,
             commands::export::export_to_json,

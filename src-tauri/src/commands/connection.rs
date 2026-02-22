@@ -5,9 +5,20 @@ use tauri::State;
 
 use crate::db::drivers;
 use crate::db::handle::DriverHandle;
+use crate::db::keychain;
 use crate::db::pool::PoolManager;
+use crate::db::tunnel::TunnelManager;
 use crate::error::AppError;
 use crate::models::connection::{ConnectionConfig, DatabaseType};
+
+/// Resolve the password from OS keychain if use_keychain is enabled.
+fn resolve_keychain_password(config: &mut ConnectionConfig) {
+    if config.use_keychain {
+        if let Some(pw) = keychain::get_password(&config.id) {
+            config.password = Some(pw);
+        }
+    }
+}
 
 /// Factory function: creates the appropriate driver handle based on database type.
 async fn create_driver_handle(config: &ConnectionConfig) -> Result<DriverHandle, AppError> {
@@ -98,9 +109,18 @@ async fn create_driver_handle(config: &ConnectionConfig) -> Result<DriverHandle,
 pub async fn connect_db(
     config: ConnectionConfig,
     pool_manager: State<'_, PoolManager>,
+    tunnel_manager: State<'_, TunnelManager>,
 ) -> Result<String, AppError> {
     let id = config.id.clone();
     info!("Connecting to {:?} '{}'", config.db_type, id);
+
+    let mut config = config;
+    resolve_keychain_password(&mut config);
+
+    let config = tunnel_manager.ensure_tunnel(&config).await.map_err(|e| {
+        error!("SSH tunnel failed for '{}': {}", id, e);
+        e
+    })?;
 
     let handle = create_driver_handle(&config).await.map_err(|e| {
         error!("Connection failed for '{}': {}", id, e);
@@ -116,22 +136,44 @@ pub async fn connect_db(
 pub async fn disconnect_db(
     connection_id: String,
     pool_manager: State<'_, PoolManager>,
+    tunnel_manager: State<'_, TunnelManager>,
 ) -> Result<(), AppError> {
     info!("Disconnecting '{}'", connection_id);
     pool_manager.remove(&connection_id).await?;
+    tunnel_manager.remove_tunnel(&connection_id).await;
     info!("Disconnected '{}'", connection_id);
     Ok(())
 }
 
 #[tauri::command]
-pub async fn test_connection(config: ConnectionConfig) -> Result<bool, AppError> {
+pub async fn test_connection(
+    config: ConnectionConfig,
+    tunnel_manager: State<'_, TunnelManager>,
+) -> Result<bool, AppError> {
     info!("Testing connection to {:?}", config.db_type);
-    match create_driver_handle(&config).await {
+
+    let mut config = config;
+    resolve_keychain_password(&mut config);
+
+    let tunneled_config = tunnel_manager.ensure_tunnel(&config).await.map_err(|e| {
+        warn!("SSH tunnel failed during test for {:?}: {}", config.db_type, e);
+        e
+    })?;
+
+    match create_driver_handle(&tunneled_config).await {
         Ok(_) => {
+            // Clean up test tunnel
+            if config.ssh_enabled {
+                tunnel_manager.remove_tunnel(&config.id).await;
+            }
             info!("Connection test successful for {:?}", config.db_type);
             Ok(true)
         }
         Err(e) => {
+            // Clean up test tunnel
+            if config.ssh_enabled {
+                tunnel_manager.remove_tunnel(&config.id).await;
+            }
             warn!("Connection test failed for {:?}: {}", config.db_type, e);
             Ok(false)
         }

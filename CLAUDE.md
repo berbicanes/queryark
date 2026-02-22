@@ -164,6 +164,10 @@ npm run check            # TypeScript/Svelte type checking
 - Confirmation dialogs — guards tab close, close all/others, disconnect with open tabs, destructive SQL (DROP/TRUNCATE/DELETE), Redis key deletion
 - Empty states & onboarding — first-launch welcome screen with CTA and DB badges, improved no-tabs empty state
 - About screen — version info, license, tech stack, GitHub link, version displayed in status bar
+- Connection URL parsing — paste postgres://, mysql://, mongodb://, redis://, bolt://, sqlite: URLs to auto-fill connection form
+- OS keychain integration — store passwords in macOS Keychain, Windows Credential Manager, or Linux Secret Service instead of plaintext JSON; lock icon toggle on password field
+- SSL certificate configuration — CA cert, client cert, client key file pickers for PostgreSQL, MySQL, MariaDB, CockroachDB, Redshift, and MongoDB
+- SSH tunneling — connect through bastion hosts via russh, local port forwarding with key/password auth, auto-cleanup on disconnect
 
 ### Stub databases (feature-gated, not yet functional):
 - Oracle (`cargo build --features oracle` — requires Oracle Instant Client)
@@ -276,11 +280,11 @@ npm run check            # TypeScript/Svelte type checking
 - [x] **About screen**: Version info, license, links to repo/docs/support
 - [ ] **App icon & branding**: Production app icon, splash screen, proper window title
 
-### Phase 14: Secure Connections
-- [ ] **SSH tunneling**: Connect through SSH tunnel (local port forwarding), UI fields for SSH host/port/user/key/password
-- [ ] **SSL certificate configuration**: CA cert, client cert, client key file pickers with Tauri file dialog
-- [ ] **Connection URL input**: Parse connection strings (postgres://, mysql://, mongodb://, redis://) and auto-fill form fields
-- [ ] **Keychain integration**: Store passwords in OS keychain (macOS Keychain, Windows Credential Manager, Linux Secret Service) instead of plaintext JSON
+### Phase 14: Secure Connections ✅
+- [x] **SSH tunneling**: Connect through SSH tunnel (local port forwarding) via russh, UI fields for SSH host/port/user/key/password, TunnelManager with bidirectional TCP forwarding
+- [x] **SSL certificate configuration**: CA cert, client cert, client key file pickers with Tauri file dialog for PostgreSQL, MySQL, MariaDB, CockroachDB, Redshift (sqlx URL params) and MongoDB (TlsOptions)
+- [x] **Connection URL input**: Parse connection strings (postgres://, mysql://, mongodb://, redis://, bolt://, sqlite:) and auto-fill form fields
+- [x] **Keychain integration**: Store passwords in OS keychain (macOS Keychain, Windows Credential Manager, Linux Secret Service) via keyring crate, lock icon toggle on password field
 
 ### Phase 15: Large Dataset Handling
 - [ ] **Backend cursor/streaming**: Replace full result set loading with cursor-based pagination — fetch only the requested page from the database, not all rows into memory

@@ -30,6 +30,12 @@ pub enum AppError {
         host: String,
         cause: String,
     },
+
+    #[error("SSH tunnel error: {0}")]
+    SshTunnel(String),
+
+    #[error("Keychain error: {0}")]
+    Keychain(String),
 }
 
 impl AppError {
@@ -43,6 +49,8 @@ impl AppError {
             AppError::QueryTimeout(_) => "QUERY_TIMEOUT",
             AppError::QueryCancelled => "QUERY_CANCELLED",
             AppError::ConnectionFailed { .. } => "CONNECTION_FAILED",
+            AppError::SshTunnel(_) => "SSH_TUNNEL_ERROR",
+            AppError::Keychain(_) => "KEYCHAIN_ERROR",
         }
     }
 }
