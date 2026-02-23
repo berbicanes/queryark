@@ -52,5 +52,13 @@
         "depends": ["webkit2gtk4.1", "libayatana-appindicator-gtk3"]
       }
     }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/berbicanes/dataforge/releases/latest/download/latest.json"
+      ],
+      "pubkey": ""
+    }
   }
 }
