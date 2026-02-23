@@ -143,6 +143,7 @@ pub trait SqlDriver: DbDriver {
     }
 
     /// Check if a transaction is currently active.
+    #[allow(dead_code)]
     async fn in_transaction(&self) -> Result<bool, AppError> {
         Ok(false)
     }
