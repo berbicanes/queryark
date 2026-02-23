@@ -34,7 +34,16 @@ jobs:
             libappindicator3-dev \
             librsvg2-dev \
             patchelf \
-            libdbus-1-dev
+            libdbus-1-dev \
+            protobuf-compiler
+
+      - name: Install protoc (macOS)
+        if: runner.os == 'macOS'
+        run: brew install protobuf
+
+      - name: Install protoc (Windows)
+        if: runner.os == 'Windows'
+        run: choco install protoc -y
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
