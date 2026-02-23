@@ -23,6 +23,7 @@
     onSort,
     onFiltersChange,
     onFilterByValue,
+    onExpandCell,
   }: {
     columns: ColumnDef[];
     rows: CellValue[][];
@@ -38,6 +39,7 @@
     onSort?: (sorts: SortColumn[]) => void;
     onFiltersChange?: (filters: FilterCondition[]) => void;
     onFilterByValue?: (column: string, value: string) => void;
+    onExpandCell?: (rowIndex: number, colIndex: number) => void;
   } = $props();
 
   const ROW_HEIGHT = 32;
@@ -134,6 +136,10 @@
 
   function handleCellSetNull(rowIndex: number, orderedColIndex: number) {
     onCellSetNull?.(startIndex + rowIndex, originalColIndex(orderedColIndex));
+  }
+
+  function handleExpandCell(rowIndex: number, orderedColIndex: number) {
+    onExpandCell?.(startIndex + rowIndex, originalColIndex(orderedColIndex));
   }
 
   function handleSelectAll(selected: boolean) {
@@ -395,6 +401,7 @@
               onCellSetNull={(colIndex) => handleCellSetNull(i, colIndex)}
               onSelect={handleRowSelect}
               onContextMenu={(rowIdx, colIdx, e) => handleContextMenu(i, colIdx, e)}
+              onExpandCell={onExpandCell ? (colIndex) => handleExpandCell(i, colIndex) : undefined}
             />
           {/each}
         </div>

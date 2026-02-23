@@ -103,6 +103,23 @@ pub struct ConnectionConfig {
     // OS keychain
     #[serde(default)]
     pub use_keychain: bool,
+    // Connection pool tuning
+    #[serde(default = "default_pool_size")]
+    pub pool_max_connections: u32,
+    #[serde(default = "default_idle_timeout")]
+    pub pool_idle_timeout_secs: u64,
+    #[serde(default = "default_acquire_timeout")]
+    pub pool_acquire_timeout_secs: u64,
+}
+
+fn default_pool_size() -> u32 {
+    5
+}
+fn default_idle_timeout() -> u64 {
+    300
+}
+fn default_acquire_timeout() -> u64 {
+    10
 }
 
 impl DatabaseType {

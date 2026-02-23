@@ -69,6 +69,10 @@ export interface ConnectionConfig {
   ssl_client_key?: string;
   // OS keychain
   use_keychain?: boolean;
+  // Connection pool tuning
+  pool_max_connections?: number;
+  pool_idle_timeout_secs?: number;
+  pool_acquire_timeout_secs?: number;
   // Connection group
   group?: string;
   // Connection color

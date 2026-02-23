@@ -36,6 +36,11 @@ pub trait DbDriver: Send + Sync {
 
     async fn get_item_count(&self, container: &str, item: &str) -> Result<i64, AppError>;
 
+    /// Return the SQL dialect hint for pagination wrapping.
+    fn dialect_hint(&self) -> &'static str {
+        "generic"
+    }
+
     /// Check if the connection is still alive. Default uses SELECT 1.
     async fn health_check(&self) -> Result<(), AppError> {
         self.execute_raw("SELECT 1").await.map(|_| ())

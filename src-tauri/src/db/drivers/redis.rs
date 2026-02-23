@@ -35,6 +35,10 @@ impl DbDriver for RedisDriver {
         DatabaseCategory::KeyValue
     }
 
+    fn dialect_hint(&self) -> &'static str {
+        "redis"
+    }
+
     async fn execute_raw(&self, query: &str) -> Result<QueryResponse, AppError> {
         let start = Instant::now();
         let trimmed = query.trim();
@@ -66,6 +70,8 @@ impl DbDriver for RedisDriver {
                     row_count,
                     execution_time_ms: elapsed,
                     affected_rows: None,
+                    truncated: false,
+                    max_rows_limit: None,
                 })
             }
             Err(e) => Err(AppError::Database(format!("Redis error: {}", e))),
@@ -144,6 +150,8 @@ impl DbDriver for RedisDriver {
             row_count: 1,
             execution_time_ms: elapsed,
             affected_rows: None,
+            truncated: false,
+            max_rows_limit: None,
         })
     }
 

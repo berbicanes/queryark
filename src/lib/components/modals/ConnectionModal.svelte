@@ -55,6 +55,11 @@
   let keychainAvailable = $state(false);
   // Connection URL
   let connectionUrl = $state('');
+  // Advanced pool settings
+  let showAdvanced = $state(false);
+  let poolMaxConnections = $state(5);
+  let poolIdleTimeout = $state(300);
+  let poolAcquireTimeout = $state(10);
 
   const COLOR_PALETTE = [
     '#ef4444', // red
@@ -271,6 +276,11 @@
     if (useKeychain && keychainAvailable) {
       config.use_keychain = true;
     }
+
+    // Pool tuning — only set if non-default
+    if (poolMaxConnections !== 5) config.pool_max_connections = poolMaxConnections;
+    if (poolIdleTimeout !== 300) config.pool_idle_timeout_secs = poolIdleTimeout;
+    if (poolAcquireTimeout !== 10) config.pool_acquire_timeout_secs = poolAcquireTimeout;
 
     return config;
   }
@@ -705,6 +715,59 @@
         </div>
       {/if}
 
+      <!-- Advanced Pool Settings -->
+      <div class="section-divider"></div>
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <div class="section-header clickable" onclick={() => { showAdvanced = !showAdvanced; }}>
+        <span>Advanced</span>
+        <svg
+          class="chevron"
+          class:expanded={showAdvanced}
+          width="12"
+          height="12"
+          viewBox="0 0 16 16"
+          fill="none"
+        >
+          <path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      {#if showAdvanced}
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pool-max">Max Connections</label>
+            <input
+              id="pool-max"
+              type="number"
+              min="1"
+              max="50"
+              bind:value={poolMaxConnections}
+            />
+          </div>
+          <div class="form-group">
+            <label for="pool-idle">Idle Timeout (s)</label>
+            <input
+              id="pool-idle"
+              type="number"
+              min="10"
+              max="3600"
+              bind:value={poolIdleTimeout}
+            />
+          </div>
+          <div class="form-group">
+            <label for="pool-acquire">Acquire Timeout (s)</label>
+            <input
+              id="pool-acquire"
+              type="number"
+              min="5"
+              max="60"
+              bind:value={poolAcquireTimeout}
+            />
+          </div>
+        </div>
+      {/if}
+
       <!-- SSH Tunnel Configuration -->
       {#if meta.requiresHost}
         <div class="section-divider"></div>
@@ -862,6 +925,26 @@
     letter-spacing: 0.5px;
     color: var(--text-muted);
     margin-bottom: 8px;
+  }
+
+  .section-header.clickable {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .section-header.clickable:hover {
+    color: var(--text-secondary);
+  }
+
+  .chevron {
+    transition: transform var(--transition-fast);
+  }
+
+  .chevron.expanded {
+    transform: rotate(90deg);
   }
 
   .color-palette {

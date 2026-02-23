@@ -16,6 +16,7 @@
     onCellSetNull,
     onSelect,
     onContextMenu,
+    onExpandCell,
   }: {
     row: CellValue[];
     columns: ColumnDef[];
@@ -30,6 +31,7 @@
     onCellSetNull?: (colIndex: number) => void;
     onSelect?: (rowIndex: number, e: MouseEvent) => void;
     onContextMenu?: (rowIndex: number, colIndex: number, e: MouseEvent) => void;
+    onExpandCell?: (colIndex: number) => void;
   } = $props();
 
   let isEven = $derived(rowIndex % 2 === 0);
@@ -68,6 +70,7 @@
       onEdit={onCellEdit ? (val) => onCellEdit!(colIndex, val) : undefined}
       onSetNull={onCellSetNull ? () => onCellSetNull!(colIndex) : undefined}
       onContextMenu={(e) => handleRowContextMenu(colIndex, e)}
+      onExpandCell={onExpandCell ? () => onExpandCell!(colIndex) : undefined}
     />
   {/each}
 </div>

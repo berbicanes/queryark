@@ -6,7 +6,10 @@ export type CellValue =
   | { type: 'Text'; value: string }
   | { type: 'Timestamp'; value: string }
   | { type: 'Binary'; value: number[] }
-  | { type: 'Json'; value: string };
+  | { type: 'Json'; value: string }
+  | { type: 'LargeText'; value: { preview: string; full_length: number } }
+  | { type: 'LargeJson'; value: { preview: string; full_length: number } }
+  | { type: 'LargeBinary'; value: { preview_length: number; full_length: number } };
 
 export interface ColumnDef {
   name: string;
@@ -19,6 +22,8 @@ export interface QueryResponse {
   row_count: number;
   execution_time_ms: number;
   affected_rows: number | null;
+  truncated?: boolean;
+  max_rows_limit?: number;
 }
 
 export interface SortColumn {

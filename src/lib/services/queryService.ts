@@ -1,13 +1,14 @@
 import * as tauri from '$lib/services/tauri';
-import type { QueryResponse, MultiStatementResult } from '$lib/types/query';
+import type { QueryResponse, MultiStatementResult, SortColumn, CellValue } from '$lib/types/query';
 import { uiStore } from '$lib/stores/ui.svelte';
 import { queryHistoryStore } from '$lib/stores/queryHistory.svelte';
+import { settingsStore } from '$lib/stores/settings.svelte';
 
 export async function executeQuery(connectionId: string, sql: string, queryId?: string): Promise<QueryResponse | null> {
   uiStore.setLoading(true, 'Executing query...');
   const startTime = performance.now();
   try {
-    const result = await tauri.executeQuery(connectionId, sql.trim(), undefined, queryId);
+    const result = await tauri.executeQuery(connectionId, sql.trim(), undefined, queryId, settingsStore.maxQueryRows, settingsStore.maxCellSize);
 
     queryHistoryStore.addEntry({
       connectionId,
@@ -53,7 +54,7 @@ export async function executeStatements(
       const startTime = performance.now();
 
       try {
-        const result = await tauri.executeQuery(connectionId, stmt, undefined, queryId);
+        const result = await tauri.executeQuery(connectionId, stmt, undefined, queryId, settingsStore.maxQueryRows, settingsStore.maxCellSize);
         results.push(result);
 
         queryHistoryStore.addEntry({
@@ -81,5 +82,40 @@ export async function executeStatements(
     return { results };
   } finally {
     uiStore.setLoading(false);
+  }
+}
+
+export async function executeQueryPage(
+  connectionId: string,
+  sql: string,
+  limit: number,
+  offset: number,
+  queryId?: string,
+  sortColumns?: SortColumn[]
+): Promise<QueryResponse | null> {
+  try {
+    return await tauri.executeQueryPage(connectionId, sql, limit, offset, undefined, queryId, settingsStore.maxCellSize, sortColumns);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    uiStore.showError(`Page fetch error: ${message}`);
+    return null;
+  }
+}
+
+export async function countQueryRows(connectionId: string, sql: string): Promise<number | null> {
+  try {
+    return await tauri.countQueryRows(connectionId, sql);
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchFullCell(connectionId: string, sql: string, column: string, rowOffset: number): Promise<CellValue | null> {
+  try {
+    return await tauri.fetchFullCell(connectionId, sql, column, rowOffset);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    uiStore.showError(`Failed to fetch full cell: ${message}`);
+    return null;
   }
 }

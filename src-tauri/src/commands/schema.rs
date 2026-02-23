@@ -19,7 +19,7 @@ const DEFAULT_DATA_TIMEOUT: Duration = Duration::from_secs(30);
 
 /// Quote an identifier based on database category.
 /// MSSQL uses [name], MySQL uses `name`, everything else uses "name".
-fn quote_ident(name: &str, category: &DatabaseCategory) -> String {
+pub(crate) fn quote_ident(name: &str, category: &DatabaseCategory) -> String {
     match category {
         DatabaseCategory::Relational => {
             // We can't distinguish MSSQL from PG here by category alone,
@@ -86,7 +86,7 @@ fn build_where_clause(filters: &[FilterCondition], category: &DatabaseCategory) 
 }
 
 /// Build an ORDER BY clause from sort columns.
-fn build_order_by(sorts: &[SortColumn], category: &DatabaseCategory) -> String {
+pub(crate) fn build_order_by(sorts: &[SortColumn], category: &DatabaseCategory) -> String {
     if sorts.is_empty() {
         return String::new();
     }

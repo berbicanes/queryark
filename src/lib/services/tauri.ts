@@ -26,8 +26,26 @@ export async function pingConnection(connectionId: string): Promise<boolean> {
 }
 
 // Query execution
-export async function executeQuery(connectionId: string, sql: string, timeoutSecs?: number, queryId?: string): Promise<QueryResponse> {
-  return invoke<QueryResponse>('execute_query', { connectionId, sql, timeoutSecs: timeoutSecs ?? null, queryId: queryId ?? null });
+export async function executeQuery(connectionId: string, sql: string, timeoutSecs?: number, queryId?: string, maxRows?: number, maxCellSize?: number): Promise<QueryResponse> {
+  return invoke<QueryResponse>('execute_query', { connectionId, sql, timeoutSecs: timeoutSecs ?? null, queryId: queryId ?? null, maxRows: maxRows ?? null, maxCellSize: maxCellSize ?? null });
+}
+
+export async function executeQueryPage(connectionId: string, sql: string, limit: number, offset: number, timeoutSecs?: number, queryId?: string, maxCellSize?: number, sortColumns?: SortColumn[]): Promise<QueryResponse> {
+  return invoke<QueryResponse>('execute_query_page', {
+    connectionId, sql, limit, offset,
+    timeoutSecs: timeoutSecs ?? null,
+    queryId: queryId ?? null,
+    maxCellSize: maxCellSize ?? null,
+    sortColumns: sortColumns && sortColumns.length > 0 ? sortColumns : null,
+  });
+}
+
+export async function countQueryRows(connectionId: string, sql: string): Promise<number> {
+  return invoke<number>('count_query_rows', { connectionId, sql });
+}
+
+export async function fetchFullCell(connectionId: string, sql: string, column: string, rowOffset: number): Promise<CellValue> {
+  return invoke<CellValue>('fetch_full_cell', { connectionId, sql, column, rowOffset });
 }
 
 export async function cancelQuery(queryId: string): Promise<boolean> {

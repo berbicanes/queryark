@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ColumnDef, CellValue } from '$lib/types/query';
-  import { extractCellValue, isNull } from '$lib/utils/formatters';
+  import { extractCellValue, isNull, isLargeValue, getLargeValueLength, truncateDisplay, formatCharCount } from '$lib/utils/formatters';
 
   let {
     value,
@@ -11,6 +11,7 @@
     onEdit,
     onSetNull,
     onContextMenu,
+    onExpandCell,
   }: {
     value: CellValue;
     column: ColumnDef;
@@ -20,6 +21,7 @@
     onEdit?: (value: string) => void;
     onSetNull?: () => void;
     onContextMenu?: (e: MouseEvent) => void;
+    onExpandCell?: () => void;
   } = $props();
 
   let isEditing = $state(false);
@@ -30,12 +32,21 @@
   let cellIsNull = $derived(isNull(value));
   let isBool = $derived(value.type === 'Bool');
   let isNumeric = $derived(value.type === 'Int' || value.type === 'Float');
-  let isJson = $derived(value.type === 'Json' || column.data_type.toLowerCase().includes('json'));
+  let isJson = $derived(value.type === 'Json' || value.type === 'LargeJson' || column.data_type.toLowerCase().includes('json'));
   let isLongText = $derived(!isJson && displayValue.length > 100);
   let useTextarea = $derived(isJson || isLongText);
+  let truncatedValue = $derived(truncateDisplay(displayValue));
+  let isTruncatedDisplay = $derived(displayValue.length > 500);
+  let isLarge = $derived(isLargeValue(value));
+  let largeLength = $derived(isLarge ? getLargeValueLength(value) : 0);
 
   function handleDblClick() {
     if (!editable || !onEdit) return;
+    if (isLarge) {
+      // For large values, expand first instead of editing
+      onExpandCell?.();
+      return;
+    }
     if (isBool && !cellIsNull) {
       // Toggle boolean directly without entering edit mode
       onEdit(value.type === 'Bool' && value.value ? 'false' : 'true');
@@ -77,6 +88,11 @@
 
   function handleContextMenu(e: MouseEvent) {
     onContextMenu?.(e);
+  }
+
+  function handleExpandClick(e: MouseEvent) {
+    e.stopPropagation();
+    onExpandCell?.();
   }
 </script>
 
@@ -129,8 +145,23 @@
       onchange={() => { if (onEdit) onEdit(value.type === 'Bool' && value.value ? 'false' : 'true'); }}
     />
     <span class="cell-text">{displayValue}</span>
+  {:else if isLarge}
+    <span class="cell-text truncate">{truncatedValue}</span>
+    <button
+      class="expand-btn"
+      onclick={handleExpandClick}
+      title="Load full value ({formatCharCount(largeLength)} {value.type === 'LargeBinary' ? 'bytes' : 'chars'})"
+    >
+      <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="4 6 8 10 12 6"></polyline>
+      </svg>
+      <span class="expand-size">{formatCharCount(largeLength)}</span>
+    </button>
   {:else}
-    <span class="cell-text truncate">{displayValue}</span>
+    <span class="cell-text truncate">{truncatedValue}</span>
+    {#if isTruncatedDisplay}
+      <span class="char-count-badge" title="{displayValue.length} characters">{formatCharCount(displayValue.length)}</span>
+    {/if}
   {/if}
 </div>
 
@@ -237,6 +268,47 @@
   .cell-textarea.json {
     font-family: var(--font-mono);
     tab-size: 2;
+  }
+
+  .char-count-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 4px;
+    font-size: 9px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    background: var(--bg-tertiary, rgba(69, 71, 90, 0.3));
+    border-radius: 3px;
+    flex-shrink: 0;
+    line-height: 1.4;
+    opacity: 0.7;
+  }
+
+  .expand-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 1px 5px;
+    font-size: 9px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+    color: var(--accent);
+    background: rgba(137, 180, 250, 0.1);
+    border: 1px solid rgba(137, 180, 250, 0.3);
+    border-radius: 3px;
+    cursor: pointer;
+    flex-shrink: 0;
+    line-height: 1.4;
+  }
+
+  .expand-btn:hover {
+    background: rgba(137, 180, 250, 0.2);
+    border-color: var(--accent);
+  }
+
+  .expand-size {
+    font-size: 9px;
   }
 
   .bool-checkbox {

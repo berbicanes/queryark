@@ -76,6 +76,10 @@ impl DbDriver for MongoDbDriver {
         DatabaseCategory::Document
     }
 
+    fn dialect_hint(&self) -> &'static str {
+        "mongodb"
+    }
+
     async fn execute_raw(&self, query: &str) -> Result<QueryResponse, AppError> {
         let start = Instant::now();
 
@@ -156,6 +160,8 @@ impl DbDriver for MongoDbDriver {
                     row_count,
                     execution_time_ms: elapsed,
                     affected_rows: None,
+                    truncated: false,
+                    max_rows_limit: None,
                 })
             }
             _ => Err(AppError::UnsupportedOperation(format!(
@@ -343,6 +349,8 @@ impl DbDriver for MongoDbDriver {
             row_count,
             execution_time_ms: elapsed,
             affected_rows: None,
+            truncated: false,
+            max_rows_limit: None,
         })
     }
 

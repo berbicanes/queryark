@@ -24,6 +24,9 @@ pub fn run() {
             commands::connection::ping_connection,
             // Query execution
             commands::query::execute_query,
+            commands::query::execute_query_page,
+            commands::query::count_query_rows,
+            commands::query::fetch_full_cell,
             commands::query::cancel_query,
             // Generic schema browsing (all databases)
             commands::schema::get_database_category,

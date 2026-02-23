@@ -22,6 +22,9 @@ fn cell_value_to_string(cell: &CellValue) -> String {
         CellValue::Timestamp(v) => v.clone(),
         CellValue::Binary(v) => format!("\\x{}", v.iter().map(|b| format!("{:02x}", b)).collect::<String>()),
         CellValue::Json(v) => v.clone(),
+        CellValue::LargeText { preview, .. } => preview.clone(),
+        CellValue::LargeJson { preview, .. } => preview.clone(),
+        CellValue::LargeBinary { full_length, .. } => format!("[{} bytes]", full_length),
     }
 }
 
@@ -35,6 +38,9 @@ fn cell_value_to_sql_literal(cell: &CellValue) -> String {
         CellValue::Timestamp(v) => format!("'{}'", v.replace('\'', "''")),
         CellValue::Binary(v) => format!("'\\x{}'", v.iter().map(|b| format!("{:02x}", b)).collect::<String>()),
         CellValue::Json(v) => format!("'{}'", v.replace('\'', "''")),
+        CellValue::LargeText { preview, .. } => format!("'{}'", preview.replace('\'', "''")),
+        CellValue::LargeJson { preview, .. } => format!("'{}'", preview.replace('\'', "''")),
+        CellValue::LargeBinary { full_length, .. } => format!("'[{} bytes]'", full_length),
     }
 }
 
@@ -51,6 +57,13 @@ fn cell_value_to_json(cell: &CellValue) -> serde_json::Value {
         ),
         CellValue::Json(v) => {
             serde_json::from_str(v).unwrap_or_else(|_| serde_json::Value::String(v.clone()))
+        }
+        CellValue::LargeText { preview, .. } => serde_json::Value::String(preview.clone()),
+        CellValue::LargeJson { preview, .. } => {
+            serde_json::from_str(preview).unwrap_or_else(|_| serde_json::Value::String(preview.clone()))
+        }
+        CellValue::LargeBinary { full_length, .. } => {
+            serde_json::Value::String(format!("[{} bytes]", full_length))
         }
     }
 }

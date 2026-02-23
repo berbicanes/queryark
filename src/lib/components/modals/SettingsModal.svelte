@@ -107,6 +107,42 @@
 
         <div class="setting-row">
           <div class="setting-label">
+            <span class="label-text">Max Query Result Rows</span>
+            <span class="label-hint">Maximum rows returned per query statement (100-100000)</span>
+          </div>
+          <div class="setting-control">
+            <input
+              type="number"
+              min="100"
+              max="100000"
+              step="100"
+              value={settingsStore.maxQueryRows}
+              onchange={(e) => settingsStore.setMaxQueryRows(Number(e.currentTarget.value))}
+            />
+            <span class="unit">rows</span>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-label">
+            <span class="label-text">Max Cell Preview Size</span>
+            <span class="label-hint">Truncate large text/JSON cells beyond this length (64-10000 chars)</span>
+          </div>
+          <div class="setting-control">
+            <input
+              type="number"
+              min="64"
+              max="10000"
+              step="64"
+              value={settingsStore.maxCellSize}
+              onchange={(e) => settingsStore.setMaxCellSize(Number(e.currentTarget.value))}
+            />
+            <span class="unit">chars</span>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-label">
             <span class="label-text">Confirm Before Delete</span>
             <span class="label-hint">Show confirmation dialog for destructive actions</span>
           </div>

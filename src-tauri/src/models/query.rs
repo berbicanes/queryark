@@ -11,6 +11,9 @@ pub enum CellValue {
     Timestamp(String),
     Binary(Vec<u8>),
     Json(String),
+    LargeText { preview: String, full_length: usize },
+    LargeJson { preview: String, full_length: usize },
+    LargeBinary { preview_length: usize, full_length: usize },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -26,6 +29,10 @@ pub struct QueryResponse {
     pub row_count: usize,
     pub execution_time_ms: u64,
     pub affected_rows: Option<u64>,
+    #[serde(default)]
+    pub truncated: bool,
+    #[serde(default)]
+    pub max_rows_limit: Option<usize>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

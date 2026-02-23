@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use async_trait::async_trait;
 use sqlx::pool::PoolConnection;
@@ -26,7 +26,9 @@ impl PostgresDriver {
     pub async fn connect(config: &ConnectionConfig) -> Result<Self, AppError> {
         let url = config.to_connection_url();
         let pool = PgPoolOptions::new()
-            .max_connections(5)
+            .max_connections(config.pool_max_connections)
+            .idle_timeout(Duration::from_secs(config.pool_idle_timeout_secs))
+            .acquire_timeout(Duration::from_secs(config.pool_acquire_timeout_secs))
             .connect(&url)
             .await
             .map_err(|e| AppError::Database(format!("Failed to connect to PostgreSQL: {}", e)))?;
@@ -72,6 +74,8 @@ impl PostgresDriver {
                 row_count,
                 execution_time_ms: elapsed,
                 affected_rows: None,
+                truncated: false,
+                max_rows_limit: None,
             })
         } else {
             let result = sqlx::query(trimmed).execute(executor).await?;
@@ -84,6 +88,8 @@ impl PostgresDriver {
                 row_count: 0,
                 execution_time_ms: elapsed,
                 affected_rows: Some(affected),
+                truncated: false,
+                max_rows_limit: None,
             })
         }
     }
@@ -93,6 +99,10 @@ impl PostgresDriver {
 impl DbDriver for PostgresDriver {
     fn category(&self) -> DatabaseCategory {
         DatabaseCategory::Relational
+    }
+
+    fn dialect_hint(&self) -> &'static str {
+        "postgres"
     }
 
     async fn execute_raw(&self, sql: &str) -> Result<QueryResponse, AppError> {

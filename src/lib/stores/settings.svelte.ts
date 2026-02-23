@@ -10,6 +10,8 @@ class SettingsStore {
   gridFontSize = $state(12);
   defaultPageSize = $state(100);
   confirmBeforeDelete = $state(true);
+  maxQueryRows = $state(10000);
+  maxCellSize = $state(256);
 
   // Window state persistence
   sidebarWidth = $state(260);
@@ -46,6 +48,10 @@ class SettingsStore {
     if (savedPageSize) this.defaultPageSize = savedPageSize;
     const savedConfirm = await this.store.get<boolean>('confirmBeforeDelete');
     if (savedConfirm !== null && savedConfirm !== undefined) this.confirmBeforeDelete = savedConfirm;
+    const savedMaxQueryRows = await this.store.get<number>('maxQueryRows');
+    if (savedMaxQueryRows) this.maxQueryRows = savedMaxQueryRows;
+    const savedMaxCellSize = await this.store.get<number>('maxCellSize');
+    if (savedMaxCellSize) this.maxCellSize = savedMaxCellSize;
 
     // Window state
     const savedSidebarWidth = await this.store.get<number>('sidebarWidth');
@@ -82,6 +88,8 @@ class SettingsStore {
       await this.store.set('gridFontSize', this.gridFontSize);
       await this.store.set('defaultPageSize', this.defaultPageSize);
       await this.store.set('confirmBeforeDelete', this.confirmBeforeDelete);
+      await this.store.set('maxQueryRows', this.maxQueryRows);
+      await this.store.set('maxCellSize', this.maxCellSize);
       await this.store.set('sidebarWidth', this.sidebarWidth);
       await this.store.set('sidebarCollapsed', this.sidebarCollapsed);
       await this.store.set('windowMaximized', this.windowMaximized);
@@ -133,6 +141,16 @@ class SettingsStore {
 
   setConfirmBeforeDelete(value: boolean) {
     this.confirmBeforeDelete = value;
+    this.persist();
+  }
+
+  setMaxQueryRows(size: number) {
+    this.maxQueryRows = Math.max(100, Math.min(100000, size));
+    this.persist();
+  }
+
+  setMaxCellSize(size: number) {
+    this.maxCellSize = Math.max(64, Math.min(10000, size));
     this.persist();
   }
 

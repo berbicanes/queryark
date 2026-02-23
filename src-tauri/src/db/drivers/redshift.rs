@@ -28,6 +28,10 @@ impl DbDriver for RedshiftDriver {
         DatabaseCategory::Analytics
     }
 
+    fn dialect_hint(&self) -> &'static str {
+        self.inner.dialect_hint()
+    }
+
     async fn execute_raw(&self, sql: &str) -> Result<QueryResponse, AppError> {
         self.inner.execute_raw(sql).await
     }

@@ -15,6 +15,7 @@
   import { buildSqlNamespace, splitStatements, parseErrorPosition, buildExplainQuery } from '$lib/utils/sqlHelpers';
   import SqlEditor from '$lib/components/editor/SqlEditor.svelte';
   import DataGrid from '$lib/components/grid/DataGrid.svelte';
+  import Pagination from '$lib/components/grid/Pagination.svelte';
   import ExportMenu from '$lib/components/grid/ExportMenu.svelte';
   import QueryHistory from '$lib/components/editor/QueryHistory.svelte';
   import SavedQueries from '$lib/components/editor/SavedQueries.svelte';
@@ -49,6 +50,85 @@
 
   // Client-side sorting per result set
   let sortColumnsMap = $state<Record<number, SortColumn[]>>({});
+
+  // Client-side pagination per result set
+  let paginationState = $state<Record<number, { page: number; pageSize: number }>>({});
+
+  // Server-side pagination state per result set
+  let serverPaginated = $state<Record<number, boolean>>({});
+  let originalSql = $state<Record<number, string>>({});
+  let totalRowCounts = $state<Record<number, number | null>>({});
+  let pageLoading = $state<Record<number, boolean>>({});
+
+  function getPagination(i: number) {
+    return paginationState[i] ?? { page: 1, pageSize: settingsStore.defaultPageSize };
+  }
+
+  function getPaginatedRows(i: number): CellValue[][] {
+    if (serverPaginated[i]) {
+      // Server-paginated: rows are already the correct page
+      return results[i]?.rows ?? [];
+    }
+    const sorted = getSortedRows(i);
+    const { page, pageSize } = getPagination(i);
+    const start = (page - 1) * pageSize;
+    return sorted.slice(start, start + pageSize);
+  }
+
+  function getTotalRows(i: number): number {
+    if (serverPaginated[i]) {
+      return totalRowCounts[i] ?? results[i]?.row_count ?? 0;
+    }
+    return getSortedRows(i).length;
+  }
+
+  async function handlePageChange(i: number, page: number) {
+    paginationState[i] = { ...getPagination(i), page };
+    paginationState = { ...paginationState };
+
+    if (serverPaginated[i]) {
+      await fetchServerPage(i);
+    }
+  }
+
+  async function handlePageSizeChange(i: number, pageSize: number) {
+    paginationState[i] = { page: 1, pageSize };
+    paginationState = { ...paginationState };
+
+    if (serverPaginated[i]) {
+      await fetchServerPage(i);
+    }
+  }
+
+  async function fetchServerPage(i: number) {
+    const sql = originalSql[i];
+    if (!sql) return;
+
+    const { page, pageSize } = getPagination(i);
+    const offset = (page - 1) * pageSize;
+
+    pageLoading[i] = true;
+    pageLoading = { ...pageLoading };
+
+    try {
+      const sorts = sortColumnsMap[i];
+      const response = await queryService.executeQueryPage(
+        tab.connectionId,
+        sql,
+        pageSize,
+        offset,
+        undefined,
+        sorts
+      );
+      if (response) {
+        results[i] = response;
+        results = [...results];
+      }
+    } finally {
+      pageLoading[i] = false;
+      pageLoading = { ...pageLoading };
+    }
+  }
 
   // Resizable split
   let splitRatio = $state(0.45);
@@ -130,6 +210,10 @@
     errorStatementIndex = null;
     errorRange = null;
     results = [];
+    serverPaginated = {};
+    originalSql = {};
+    totalRowCounts = {};
+    pageLoading = {};
 
     try {
       const statements = splitStatements(sqlValue);
@@ -140,6 +224,19 @@
         if (response) {
           results = [response];
           sortColumnsMap = {};
+          paginationState = {};
+
+          // If truncated, enable server-side pagination
+          if (response.truncated) {
+            serverPaginated = { 0: true };
+            originalSql = { 0: sqlValue.trim() };
+            totalRowCounts = { 0: null };
+            // Async fetch total count
+            queryService.countQueryRows(tab.connectionId, sqlValue.trim()).then(count => {
+              totalRowCounts = { ...totalRowCounts, 0: count };
+            });
+          }
+
           onqueryresult?.({
             executionTime: response.execution_time_ms,
             rowCount: response.row_count
@@ -150,6 +247,21 @@
         const multiResult = await queryService.executeStatements(tab.connectionId, statements, queryId);
         results = multiResult.results;
         sortColumnsMap = {};
+        paginationState = {};
+
+        // Check each result for truncation
+        for (let i = 0; i < multiResult.results.length; i++) {
+          if (multiResult.results[i].truncated) {
+            serverPaginated = { ...serverPaginated, [i]: true };
+            originalSql = { ...originalSql, [i]: statements[i].trim() };
+            totalRowCounts = { ...totalRowCounts, [i]: null };
+            const stmtSql = statements[i].trim();
+            const idx = i;
+            queryService.countQueryRows(tab.connectionId, stmtSql).then(count => {
+              totalRowCounts = { ...totalRowCounts, [idx]: count };
+            });
+          }
+        }
 
         if (multiResult.error) {
           errorStatementIndex = multiResult.error.index;
@@ -202,9 +314,56 @@
     return 0;
   }
 
-  function handleSort(resultIndex: number, sorts: SortColumn[]) {
+  async function handleSort(resultIndex: number, sorts: SortColumn[]) {
     sortColumnsMap[resultIndex] = sorts;
-    sortColumnsMap = { ...sortColumnsMap }; // trigger reactivity
+    sortColumnsMap = { ...sortColumnsMap };
+    // Reset to page 1 on sort change
+    if (paginationState[resultIndex]) {
+      paginationState[resultIndex] = { ...paginationState[resultIndex], page: 1 };
+      paginationState = { ...paginationState };
+    }
+
+    if (serverPaginated[resultIndex]) {
+      await fetchServerPage(resultIndex);
+    }
+  }
+
+  async function handleExpandCell(resultIndex: number, rowIndex: number, colIndex: number) {
+    const result = results[resultIndex];
+    if (!result) return;
+
+    const column = result.columns[colIndex];
+    if (!column) return;
+
+    // Determine the absolute row offset in the original result set
+    let absoluteRowOffset: number;
+    if (serverPaginated[resultIndex]) {
+      const { page, pageSize } = getPagination(resultIndex);
+      absoluteRowOffset = (page - 1) * pageSize + rowIndex;
+    } else {
+      const { page, pageSize } = getPagination(resultIndex);
+      absoluteRowOffset = (page - 1) * pageSize + rowIndex;
+    }
+
+    const sql = originalSql[resultIndex] ?? sqlValue.trim();
+
+    const fullCell = await queryService.fetchFullCell(
+      tab.connectionId,
+      sql,
+      column.name,
+      absoluteRowOffset
+    );
+
+    if (fullCell) {
+      // Replace the cell value in the results
+      const newResults = [...results];
+      const newRows = [...newResults[resultIndex].rows];
+      const newRow = [...newRows[rowIndex]];
+      newRow[colIndex] = fullCell;
+      newRows[rowIndex] = newRow;
+      newResults[resultIndex] = { ...newResults[resultIndex], rows: newRows };
+      results = newResults;
+    }
   }
 
   async function handleCancel() {
@@ -503,14 +662,41 @@
               <span class="result-meta">{result.row_count} rows, {result.execution_time_ms}ms</span>
             </div>
           {/if}
+          {#if serverPaginated[i]}
+            <div class="server-pagination-info">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              Server-paginated — {totalRowCounts[i] != null ? `${totalRowCounts[i]!.toLocaleString()} total rows` : 'counting rows...'}
+              {#if pageLoading[i]}
+                <span class="page-spinner"></span>
+              {/if}
+            </div>
+          {:else if result.truncated}
+            <div class="truncation-warning">
+              Results limited to {result.max_rows_limit?.toLocaleString()} rows. Full result set may be larger.
+            </div>
+          {/if}
           <div class="result-grid" class:multi={results.length > 1}>
             <DataGrid
               columns={result.columns}
-              rows={getSortedRows(i)}
+              rows={getPaginatedRows(i)}
               sortColumns={sortColumnsMap[i] ?? []}
               onSort={(sorts) => handleSort(i, sorts)}
+              onExpandCell={(rowIndex, colIndex) => handleExpandCell(i, rowIndex, colIndex)}
             />
           </div>
+          {#if getTotalRows(i) > 0}
+            <Pagination
+              currentPage={getPagination(i).page}
+              totalRows={getTotalRows(i)}
+              pageSize={getPagination(i).pageSize}
+              onPageChange={(page) => handlePageChange(i, page)}
+              onPageSizeChange={(size) => handlePageSizeChange(i, size)}
+            />
+          {/if}
         {/each}
         {#if errorMessage}
           <div class="error-state partial">
@@ -720,6 +906,17 @@
     animation: spin 0.8s linear infinite;
   }
 
+  .page-spinner {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border: 1.5px solid var(--border-color);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-left: 4px;
+  }
+
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
@@ -808,6 +1005,30 @@
     font-size: 11px;
     font-weight: 600;
     color: var(--text-secondary);
+    flex-shrink: 0;
+  }
+
+  .truncation-warning {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: var(--warning, #fab387);
+    background: rgba(250, 179, 135, 0.08);
+    border-bottom: 1px solid rgba(250, 179, 135, 0.2);
+    flex-shrink: 0;
+  }
+
+  .server-pagination-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(137, 180, 250, 0.06);
+    border-bottom: 1px solid rgba(137, 180, 250, 0.15);
     flex-shrink: 0;
   }
 

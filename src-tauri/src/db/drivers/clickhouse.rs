@@ -128,6 +128,10 @@ impl DbDriver for ClickHouseDriver {
         DatabaseCategory::Analytics
     }
 
+    fn dialect_hint(&self) -> &'static str {
+        "clickhouse"
+    }
+
     async fn execute_raw(&self, sql: &str) -> Result<QueryResponse, AppError> {
         let start = Instant::now();
         let trimmed = sql.trim();
@@ -150,6 +154,8 @@ impl DbDriver for ClickHouseDriver {
                 row_count,
                 execution_time_ms: elapsed,
                 affected_rows: None,
+                truncated: false,
+                max_rows_limit: None,
             })
         } else {
             self.client
@@ -166,6 +172,8 @@ impl DbDriver for ClickHouseDriver {
                 row_count: 0,
                 execution_time_ms: elapsed,
                 affected_rows: Some(0),
+                truncated: false,
+                max_rows_limit: None,
             })
         }
     }

@@ -156,6 +156,10 @@ impl DbDriver for DynamoDbDriver {
         DatabaseCategory::Document
     }
 
+    fn dialect_hint(&self) -> &'static str {
+        "dynamodb"
+    }
+
     async fn execute_raw(&self, query: &str) -> Result<QueryResponse, AppError> {
         let start = Instant::now();
 
@@ -220,6 +224,8 @@ impl DbDriver for DynamoDbDriver {
             row_count,
             execution_time_ms: elapsed,
             affected_rows: None,
+            truncated: false,
+            max_rows_limit: None,
         })
     }
 
@@ -390,6 +396,8 @@ impl DbDriver for DynamoDbDriver {
             row_count,
             execution_time_ms: elapsed,
             affected_rows: None,
+            truncated: false,
+            max_rows_limit: None,
         })
     }
 

@@ -168,6 +168,13 @@ npm run check            # TypeScript/Svelte type checking
 - OS keychain integration — store passwords in macOS Keychain, Windows Credential Manager, or Linux Secret Service instead of plaintext JSON; lock icon toggle on password field
 - SSL certificate configuration — CA cert, client cert, client key file pickers for PostgreSQL, MySQL, MariaDB, CockroachDB, Redshift, and MongoDB
 - SSH tunneling — connect through bastion hosts via russh, local port forwarding with key/password auth, auto-cleanup on disconnect
+- Result set size limits — configurable max rows per query (default 10K), truncation warning banner when results exceed limit
+- QueryTab pagination — client-side pagination for query results using existing Pagination component
+- Large cell text truncation — display-layer truncation (500 chars) with character count badge for long text/JSON values
+- Connection pool tuning — configurable pool size (1-50), idle timeout (10-3600s), acquire timeout (5-60s) per connection in Advanced section
+- Backend cursor/streaming — server-side query pagination with `execute_query_page` and `count_query_rows` commands, automatic transition from client-side to server-side pagination when results are truncated, LIMIT/OFFSET wrapping with dialect-aware SQL (MSSQL OFFSET...FETCH vs standard LIMIT...OFFSET)
+- Lazy column loading — large TEXT/JSON/Binary values truncated at configurable threshold (default 256 chars), `LargeText`/`LargeJson`/`LargeBinary` cell variants with preview + full_length, on-demand `fetch_full_cell` command to load full value, expand button in GridCell with size badge
+- Max cell preview size setting — configurable truncation threshold (64-10000 chars) in Settings modal, passed to all query execution commands
 
 ### Stub databases (feature-gated, not yet functional):
 - Oracle (`cargo build --features oracle` — requires Oracle Instant Client)
@@ -177,9 +184,9 @@ npm run check            # TypeScript/Svelte type checking
 ### Known issues to fix:
 - **SQL injection risk**: update_cell, insert_row, delete_rows use string concatenation instead of parameterized queries
 - **Passwords stored in plaintext**: plugin-store saves JSON to disk unencrypted
-- Connection pool hardcoded to 5, no idle timeout or health checks
-- No query timeout enforcement
-- Full result sets loaded into memory (no streaming)
+- ~~Connection pool hardcoded to 5, no idle timeout or health checks~~ (fixed: configurable pool tuning)
+- ~~No query timeout enforcement~~ (fixed: configurable query timeout)
+- ~~Full result sets loaded into memory (no streaming)~~ (mitigated: result set size limits with configurable max rows)
 - Schema cache never auto-invalidates
 
 ---
@@ -286,12 +293,14 @@ npm run check            # TypeScript/Svelte type checking
 - [x] **Connection URL input**: Parse connection strings (postgres://, mysql://, mongodb://, redis://, bolt://, sqlite:) and auto-fill form fields
 - [x] **Keychain integration**: Store passwords in OS keychain (macOS Keychain, Windows Credential Manager, Linux Secret Service) via keyring crate, lock icon toggle on password field
 
-### Phase 15: Large Dataset Handling
-- [ ] **Backend cursor/streaming**: Replace full result set loading with cursor-based pagination — fetch only the requested page from the database, not all rows into memory
-- [ ] **Virtual scrolling**: Render only visible rows in the data grid using a virtual scroll container, supporting 100K+ rows without DOM bloat
-- [ ] **Lazy column loading**: Defer loading of large text/blob columns until the cell is expanded or clicked
-- [ ] **Result set size limits**: Configurable max rows per query (default 10K), warn user when result exceeds limit, offer to export full result to file instead
-- [ ] **Connection pool tuning**: Configurable pool size per connection, idle timeout, connection recycling
+### Phase 15: Large Dataset Handling ✅
+- [x] **Backend cursor/streaming**: Server-side query pagination via `execute_query_page` and `count_query_rows` commands, automatic transition when results are truncated, dialect-aware LIMIT/OFFSET wrapping (MSSQL OFFSET...FETCH vs standard)
+- [x] **Virtual scrolling**: Render only visible rows in the data grid using a virtual scroll container (ROW_HEIGHT=32, BUFFER_ROWS=10, CSS translateY), supporting 100K+ rows without DOM bloat
+- [x] **Lazy column loading**: Large TEXT/JSON/Binary values truncated at configurable threshold (default 256 chars), `LargeText`/`LargeJson`/`LargeBinary` cell variants with preview + full_length, on-demand `fetch_full_cell` command, expand button in GridCell
+- [x] **Result set size limits**: Configurable max rows per query (default 10K), truncation warning when result exceeds limit, setting in Settings modal (100–100K)
+- [x] **QueryTab pagination**: Client-side pagination for query results with page size selector, server-side pagination for truncated results
+- [x] **Large cell text truncation**: Display-layer truncation (500 chars) with character count badge for long text/JSON cells
+- [x] **Connection pool tuning**: Configurable pool size (1–50), idle timeout (10–3600s), acquire timeout (5–60s) per connection in Advanced section of connection modal
 
 ### Phase 16: Build & Distribution
 - [ ] **GitHub Actions CI/CD**: Automated build pipeline for macOS (universal binary: x64 + ARM), Windows (x64), and Linux (x64)

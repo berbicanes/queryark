@@ -103,6 +103,10 @@ impl DbDriver for Neo4jDriver {
         DatabaseCategory::Graph
     }
 
+    fn dialect_hint(&self) -> &'static str {
+        "neo4j"
+    }
+
     async fn execute_raw(&self, query: &str) -> Result<QueryResponse, AppError> {
         let start = Instant::now();
         let trimmed = query.trim();
@@ -161,6 +165,8 @@ impl DbDriver for Neo4jDriver {
             row_count,
             execution_time_ms: elapsed,
             affected_rows: None,
+            truncated: false,
+            max_rows_limit: None,
         })
     }
 

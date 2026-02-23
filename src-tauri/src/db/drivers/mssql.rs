@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use async_trait::async_trait;
 use bb8::Pool;
@@ -38,7 +38,9 @@ impl MssqlDriver {
             .map_err(|e| AppError::Database(format!("Failed to create MSSQL connection manager: {}", e)))?;
 
         let pool = Pool::builder()
-            .max_size(5)
+            .max_size(config.pool_max_connections)
+            .idle_timeout(Some(Duration::from_secs(config.pool_idle_timeout_secs)))
+            .connection_timeout(Duration::from_secs(config.pool_acquire_timeout_secs))
             .build(mgr)
             .await
             .map_err(|e| AppError::Database(format!("Failed to connect to MSSQL: {}", e)))?;
@@ -132,6 +134,10 @@ impl DbDriver for MssqlDriver {
         DatabaseCategory::Relational
     }
 
+    fn dialect_hint(&self) -> &'static str {
+        "mssql"
+    }
+
     async fn execute_raw(&self, sql: &str) -> Result<QueryResponse, AppError> {
         let start = Instant::now();
         let trimmed = sql.trim();
@@ -153,6 +159,8 @@ impl DbDriver for MssqlDriver {
                 row_count,
                 execution_time_ms: elapsed,
                 affected_rows: None,
+                truncated: false,
+                max_rows_limit: None,
             })
         } else {
             let mut conn = self.pool.get().await
@@ -167,6 +175,8 @@ impl DbDriver for MssqlDriver {
                 row_count: 0,
                 execution_time_ms: elapsed,
                 affected_rows: Some(result.rows_affected().iter().sum::<u64>()),
+                truncated: false,
+                max_rows_limit: None,
             })
         }
     }
