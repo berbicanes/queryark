@@ -222,6 +222,35 @@ class SchemaStore {
     }
   }
 
+  /**
+   * Returns the "active" (default) schema for a connection based on visibility state.
+   * - If 1 schema visible → that's the active schema
+   * - If multiple visible → first visible is treated as default
+   * - If all visible (null) → returns the conventional default for the db type
+   */
+  getActiveSchema(connectionId: string, dbType: string): string | null {
+    const visible = this.visibleSchemas[connectionId];
+    if (visible && visible.length > 0) {
+      return visible[0];
+    }
+    // All schemas visible — return conventional default
+    switch (dbType) {
+      case 'PostgreSQL':
+      case 'CockroachDB':
+      case 'Redshift':
+        return 'public';
+      case 'MySQL':
+      case 'MariaDB': {
+        const schemas = this.cache[connectionId]?.schemas ?? [];
+        return schemas.length > 0 ? schemas[0].name : null;
+      }
+      case 'MSSQL':
+        return 'dbo';
+      default:
+        return null;
+    }
+  }
+
   clearTableStats(connectionId: string, schemaName: string, tableName: string) {
     const key = `${schemaName}.${tableName}`;
     if (this.cache[connectionId]?.tableStats) {

@@ -3,6 +3,7 @@
   import { uiStore } from '$lib/stores/ui.svelte';
   import { DB_METADATA } from '$lib/types/database';
   import * as schemaService from '$lib/services/schemaService';
+  import { executeQuery } from '$lib/services/tauri';
   import ConnectionList from './ConnectionList.svelte';
   import SchemaTree from './SchemaTree.svelte';
 
@@ -12,6 +13,48 @@
 
   let activeConnection = $derived(connectionStore.activeConnection);
   let isConnected = $derived(activeConnection?.status === 'connected');
+
+  // Schema search path display
+  let searchPath = $state<string | null>(null);
+
+  $effect(() => {
+    searchPath = null;
+    if (!isConnected || !activeConnection) return;
+    const connId = activeConnection.config.id;
+    const dbType = activeConnection.config.db_type;
+    const cat = DB_METADATA[dbType].category;
+    const isSqlLike = cat === 'Relational' || cat === 'Analytics' || cat === 'WideColumn';
+    if (!isSqlLike) return;
+
+    let query: string | null = null;
+    switch (dbType) {
+      case 'PostgreSQL':
+      case 'CockroachDB':
+      case 'Redshift':
+        query = 'SHOW search_path';
+        break;
+      case 'MySQL':
+      case 'MariaDB':
+        query = 'SELECT DATABASE()';
+        break;
+      case 'MSSQL':
+        query = 'SELECT SCHEMA_NAME()';
+        break;
+      default:
+        return; // SQLite, ClickHouse, Cassandra — no meaningful search path
+    }
+
+    executeQuery(connId, query).then(result => {
+      if (result.rows && result.rows.length > 0) {
+        const cell = result.rows[0][0];
+        if (cell && typeof cell === 'object' && 'type' in cell && cell.type === 'Text') {
+          searchPath = (cell as { type: 'Text'; value: string }).value;
+        }
+      }
+    }).catch(() => {
+      // Silently ignore — don't block UI
+    });
+  });
 
   let refreshing = $state(false);
 
@@ -92,6 +135,13 @@
             </svg>
           </button>
         </div>
+        {#if searchPath}
+          {@const dbType = activeConnection?.config.db_type}
+          {@const pathLabel = dbType === 'MySQL' || dbType === 'MariaDB' ? 'database' : dbType === 'MSSQL' ? 'schema' : 'search_path'}
+          <div class="search-path" title="{pathLabel}: {searchPath}">
+            {pathLabel}: {searchPath}
+          </div>
+        {/if}
         <SchemaTree connectionId={connectionStore.activeConnectionId} />
       </div>
     {/if}
@@ -184,6 +234,18 @@
   .refresh-btn:hover {
     color: var(--accent);
     background: var(--bg-hover);
+  }
+
+  .search-path {
+    padding: 2px 12px 4px;
+    font-size: 10px;
+    font-style: italic;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0.8;
+    font-family: var(--font-mono);
   }
 
   .refresh-btn.spinning svg {

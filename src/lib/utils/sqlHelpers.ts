@@ -15,6 +15,22 @@ export function quoteIdentifier(name: string, dbType: DatabaseType): string {
 }
 
 /**
+ * Returns a schema-qualified table name if the schema differs from the active schema,
+ * otherwise returns just the table name.
+ */
+export function qualifyTableName(
+  schemaName: string,
+  tableName: string,
+  activeSchema: string | null,
+  dbType: DatabaseType
+): string {
+  if (activeSchema && schemaName === activeSchema) {
+    return tableName;
+  }
+  return `${quoteIdentifier(schemaName, dbType)}.${quoteIdentifier(tableName, dbType)}`;
+}
+
+/**
  * Build a SQLNamespace object from the schema cache for CodeMirror autocompletion.
  * Returns { "schema.table": ["col1", "col2"], ... } format.
  */

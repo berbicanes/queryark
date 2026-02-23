@@ -11,6 +11,7 @@
     suffix = '',
     onclick,
     ondblclick,
+    oncontextmenu,
     onexpand,
     children
   }: {
@@ -23,6 +24,7 @@
     suffix?: string;
     onclick?: () => void;
     ondblclick?: () => void;
+    oncontextmenu?: (e: MouseEvent) => void;
     onexpand?: (expanded: boolean) => void;
     children?: Snippet;
   } = $props();
@@ -78,6 +80,7 @@
     title={tooltip || undefined}
     onclick={handleClick}
     ondblclick={handleDblClick}
+    oncontextmenu={oncontextmenu}
   >
     {#if expandable}
       <svg

@@ -3,7 +3,10 @@
   import { settingsStore } from '$lib/stores/settings.svelte';
   import { tabStore } from '$lib/stores/tabs.svelte';
   import { connectionStore } from '$lib/stores/connections.svelte';
+  import { uiStore } from '$lib/stores/ui.svelte';
   import * as schemaService from '$lib/services/schemaService';
+  import { executeQuery } from '$lib/services/tauri';
+  import { quoteIdentifier } from '$lib/utils/sqlHelpers';
   import { DB_METADATA } from '$lib/types/database';
   import type { SchemaInfo, TableInfo, ColumnInfo, ContainerInfo, ItemInfo, FieldInfo, TableStats, RoutineInfo, SequenceInfo, EnumInfo } from '$lib/types/schema';
   import type { DatabaseCategory, DatabaseType } from '$lib/types/connection';
@@ -217,9 +220,11 @@
   }
 
   function handleTableDblClick(schema: string, table: string) {
+    const activeSchema = schemaStore.getActiveSchema(connectionId, dbType);
+    const title = (activeSchema && schema !== activeSchema) ? `${schema}.${table}` : table;
     tabStore.openTab({
       type: 'table',
-      title: table,
+      title,
       connectionId,
       schema,
       table
@@ -381,7 +386,128 @@
     if (field.is_primary) return ICON_KEY;
     return getColumnTypeIcon(field.data_type);
   }
+
+  // --- Schema context menu ---
+  let schemaContextMenu = $state<{ x: number; y: number; schemaName: string } | null>(null);
+  let createSchemaInput = $state<{ value: string } | null>(null);
+
+  function handleSchemaContextMenu(e: MouseEvent, schemaName: string) {
+    e.preventDefault();
+    schemaContextMenu = { x: e.clientX, y: e.clientY, schemaName };
+  }
+
+  function closeSchemaContextMenu() {
+    schemaContextMenu = null;
+  }
+
+  function ctxNewQueryHere() {
+    if (!schemaContextMenu) return;
+    const schema = schemaContextMenu.schemaName;
+    closeSchemaContextMenu();
+
+    let prefix = '';
+    switch (dbType) {
+      case 'PostgreSQL':
+      case 'CockroachDB':
+      case 'Redshift':
+        prefix = `SET search_path TO ${quoteIdentifier(schema, dbType)};\n\n`;
+        break;
+      case 'MySQL':
+      case 'MariaDB':
+        prefix = `USE ${quoteIdentifier(schema, dbType)};\n\n`;
+        break;
+      case 'MSSQL':
+        // MSSQL doesn't have USE for schemas, just qualify tables
+        prefix = `-- Schema: ${schema}\n\n`;
+        break;
+      default:
+        prefix = `-- Schema: ${schema}\n\n`;
+    }
+
+    const queryCount = tabStore.tabs.filter(t => t.type === 'query').length + 1;
+    tabStore.openTab({
+      type: 'query',
+      title: `Query ${queryCount}`,
+      connectionId,
+      sql: prefix
+    });
+  }
+
+  function ctxCreateSchema() {
+    closeSchemaContextMenu();
+    createSchemaInput = { value: '' };
+    // Focus the input after render
+    setTimeout(() => {
+      const el = document.querySelector('.create-schema-input input') as HTMLInputElement;
+      el?.focus();
+    }, 0);
+  }
+
+  async function submitCreateSchema() {
+    if (!createSchemaInput || !createSchemaInput.value.trim()) {
+      createSchemaInput = null;
+      return;
+    }
+    const name = createSchemaInput.value.trim();
+    createSchemaInput = null;
+    const ddl = `CREATE SCHEMA ${quoteIdentifier(name, dbType)}`;
+    try {
+      await executeQuery(connectionId, ddl);
+      await schemaService.refreshSchema(connectionId);
+      uiStore.showSuccess(`Schema "${name}" created`);
+    } catch (err) {
+      uiStore.showError(`Failed to create schema: ${err}`);
+    }
+  }
+
+  function handleCreateSchemaKeydown(e: KeyboardEvent) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      submitCreateSchema();
+    } else if (e.key === 'Escape') {
+      createSchemaInput = null;
+    }
+  }
+
+  function ctxDropSchema() {
+    if (!schemaContextMenu) return;
+    const schema = schemaContextMenu.schemaName;
+    closeSchemaContextMenu();
+
+    let ddl: string;
+    switch (dbType) {
+      case 'MySQL':
+      case 'MariaDB':
+        ddl = `DROP SCHEMA ${quoteIdentifier(schema, dbType)}`;
+        break;
+      case 'MSSQL':
+        ddl = `DROP SCHEMA ${quoteIdentifier(schema, dbType)}`;
+        break;
+      default:
+        ddl = `DROP SCHEMA ${quoteIdentifier(schema, dbType)} CASCADE`;
+    }
+
+    uiStore.confirm(
+      `Drop schema "${schema}"? This will permanently delete all objects within it.`,
+      async () => {
+        try {
+          await executeQuery(connectionId, ddl);
+          await schemaService.refreshSchema(connectionId);
+          uiStore.showSuccess(`Schema "${schema}" dropped`);
+        } catch (err) {
+          uiStore.showError(`Failed to drop schema: ${err}`);
+        }
+      }
+    );
+  }
+
+  // Databases that support CREATE/DROP SCHEMA
+  let supportsSchemaManagement = $derived(
+    ['PostgreSQL', 'MySQL', 'MariaDB', 'MSSQL', 'CockroachDB', 'Redshift'].includes(dbType)
+  );
 </script>
+
+<svelte:window onclick={closeSchemaContextMenu} />
 
 <div class="schema-tree">
   {#if isSqlLike || containers.length > 0 || schemas.length > 0}
@@ -462,6 +588,7 @@
             expandable={true}
             depth={0}
             onexpand={(exp) => handleSchemaExpand(schema, exp)}
+            oncontextmenu={supportsSchemaManagement ? (e) => handleSchemaContextMenu(e, schema.name) : undefined}
           >
             {#snippet children()}
               <!-- Tables category -->
@@ -696,7 +823,50 @@
       {/each}
     {/if}
   {/if}
+
+  {#if createSchemaInput}
+    <div class="create-schema-input">
+      <input
+        type="text"
+        bind:value={createSchemaInput.value}
+        onkeydown={handleCreateSchemaKeydown}
+        onblur={() => createSchemaInput = null}
+        placeholder="New schema name..."
+      />
+    </div>
+  {/if}
 </div>
+
+{#if schemaContextMenu}
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div
+    class="schema-context-menu"
+    style="left: {schemaContextMenu.x}px; top: {schemaContextMenu.y}px"
+    onclick={(e) => e.stopPropagation()}
+    onkeydown={(e) => { if (e.key === 'Escape') closeSchemaContextMenu(); }}
+  >
+    <button class="context-item" onclick={ctxNewQueryHere}>
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+        <path d="M3 2h7l3 3v9H3V2z" stroke="currentColor" stroke-width="1.2" fill="none"/>
+        <path d="M6 8h4M6 11h4" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+      </svg>
+      New Query Here
+    </button>
+    <div class="context-divider"></div>
+    <button class="context-item" onclick={ctxCreateSchema}>
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+        <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      Create Schema...
+    </button>
+    <button class="context-item danger" onclick={ctxDropSchema}>
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+        <path d="M3 4h10M6 4V3a1 1 0 011-1h2a1 1 0 011 1v1M5 4v9a1 1 0 001 1h4a1 1 0 001-1V4" stroke="currentColor" stroke-width="1.2" fill="none"/>
+      </svg>
+      Drop Schema
+    </button>
+  </div>
+{/if}
 
 <style>
   .schema-tree {
@@ -853,5 +1023,93 @@
     height: 1px;
     background: var(--border-color);
     margin: 4px 0;
+  }
+
+  /* Schema context menu */
+  .schema-context-menu {
+    position: fixed;
+    z-index: 500;
+    background: var(--bg-elevated, var(--bg-secondary));
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: 4px 0;
+    min-width: 160px;
+    animation: ctxMenuIn 120ms var(--ease-out-expo);
+  }
+
+  @keyframes ctxMenuIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .schema-context-menu :global(.context-item) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--text-primary);
+    text-align: left;
+    transition: background var(--transition-fast);
+    cursor: pointer;
+    border: none;
+    background: none;
+  }
+
+  .context-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--text-primary);
+    text-align: left;
+    transition: background var(--transition-fast);
+    cursor: pointer;
+    border: none;
+    background: none;
+  }
+
+  .context-item:hover {
+    background: var(--bg-hover);
+  }
+
+  .context-item.danger {
+    color: var(--error);
+  }
+
+  .context-item.danger:hover {
+    background: rgba(243, 139, 168, 0.1);
+  }
+
+  .context-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 4px 0;
+  }
+
+  /* Create schema input */
+  .create-schema-input {
+    padding: 4px 8px;
+  }
+
+  .create-schema-input input {
+    width: 100%;
+    padding: 4px 8px;
+    font-size: 11px;
+    background: var(--bg-primary);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(122, 162, 247, 0.1);
+  }
+
+  .create-schema-input input::placeholder {
+    color: var(--text-muted);
+    font-style: italic;
   }
 </style>
