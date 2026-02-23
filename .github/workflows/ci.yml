@@ -65,3 +65,42 @@ jobs:
       - name: Rust check
         run: cargo check
         working-directory: src-tauri
+
+  e2e-tests:
+    runs-on: ubuntu-22.04
+    needs: check
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start test databases
+        run: docker compose -f tests/stress/docker-compose.yml up -d
+        continue-on-error: true
+
+      - name: Run Playwright tests
+        run: npx playwright test
+
+      - name: Upload test artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+      - name: Stop test databases
+        if: always()
+        run: docker compose -f tests/stress/docker-compose.yml down
+        continue-on-error: true

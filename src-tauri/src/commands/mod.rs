@@ -1,3 +1,4 @@
+pub mod backup;
 pub mod connection;
 pub mod document;
 pub mod export;

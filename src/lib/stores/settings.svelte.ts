@@ -29,6 +29,14 @@ class SettingsStore {
   // Schema visibility per connection
   schemaVisibility = $state<Record<string, string[]>>({});
 
+  // Phase 23 — Quality & Trust
+  crashReportingEnabled = $state(true);
+  telemetryEnabled = $state(false);
+  telemetrySessionId = $state('');
+  lastSeenVersion = $state('');
+  autoBackupEnabled = $state(true);
+  lastBackupDate = $state('');
+
   private store: Store | null = null;
   private initialized = false;
 
@@ -81,6 +89,20 @@ class SettingsStore {
     const savedSchemaVisibility = await this.store.get<Record<string, string[]>>('schemaVisibility');
     if (savedSchemaVisibility) this.schemaVisibility = savedSchemaVisibility;
 
+    // Phase 23 — Quality & Trust
+    const savedCrashReporting = await this.store.get<boolean>('crashReportingEnabled');
+    if (savedCrashReporting !== null && savedCrashReporting !== undefined) this.crashReportingEnabled = savedCrashReporting;
+    const savedTelemetry = await this.store.get<boolean>('telemetryEnabled');
+    if (savedTelemetry !== null && savedTelemetry !== undefined) this.telemetryEnabled = savedTelemetry;
+    const savedTelemetrySessionId = await this.store.get<string>('telemetrySessionId');
+    if (savedTelemetrySessionId) this.telemetrySessionId = savedTelemetrySessionId;
+    const savedLastSeenVersion = await this.store.get<string>('lastSeenVersion');
+    if (savedLastSeenVersion) this.lastSeenVersion = savedLastSeenVersion;
+    const savedAutoBackup = await this.store.get<boolean>('autoBackupEnabled');
+    if (savedAutoBackup !== null && savedAutoBackup !== undefined) this.autoBackupEnabled = savedAutoBackup;
+    const savedLastBackupDate = await this.store.get<string>('lastBackupDate');
+    if (savedLastBackupDate) this.lastBackupDate = savedLastBackupDate;
+
     this.applyTheme();
     this.applyFontSizes();
     this.initialized = true;
@@ -106,6 +128,12 @@ class SettingsStore {
       await this.store.set('restoreSession', this.restoreSession);
       await this.store.set('lastActiveConnectionId', this.lastActiveConnectionId);
       await this.store.set('schemaVisibility', this.schemaVisibility);
+      await this.store.set('crashReportingEnabled', this.crashReportingEnabled);
+      await this.store.set('telemetryEnabled', this.telemetryEnabled);
+      await this.store.set('telemetrySessionId', this.telemetrySessionId);
+      await this.store.set('lastSeenVersion', this.lastSeenVersion);
+      await this.store.set('autoBackupEnabled', this.autoBackupEnabled);
+      await this.store.set('lastBackupDate', this.lastBackupDate);
       await this.store.save();
     }
   }
@@ -197,6 +225,36 @@ class SettingsStore {
     } else {
       this.schemaVisibility = { ...this.schemaVisibility, [connectionId]: schemas };
     }
+    this.persist();
+  }
+
+  setCrashReportingEnabled(value: boolean) {
+    this.crashReportingEnabled = value;
+    this.persist();
+  }
+
+  setTelemetryEnabled(value: boolean) {
+    this.telemetryEnabled = value;
+    this.persist();
+  }
+
+  setTelemetrySessionId(id: string) {
+    this.telemetrySessionId = id;
+    this.persist();
+  }
+
+  setLastSeenVersion(version: string) {
+    this.lastSeenVersion = version;
+    this.persist();
+  }
+
+  setAutoBackupEnabled(value: boolean) {
+    this.autoBackupEnabled = value;
+    this.persist();
+  }
+
+  setLastBackupDate(date: string) {
+    this.lastBackupDate = date;
     this.persist();
   }
 

@@ -63,6 +63,9 @@ class UiStore {
   showWorkspaceModal = $state(false);
   showBookmarkList = $state(false);
 
+  // Phase 23 — Quality & Trust
+  showWhatsNewModal = $state(false);
+
   // Phase 22 — Advanced Query Features
   showParameterPrompt = $state(false);
   parameterPromptSql = $state('');

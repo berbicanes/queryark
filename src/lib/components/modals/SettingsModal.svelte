@@ -1,6 +1,13 @@
 <script lang="ts">
   import { uiStore } from '$lib/stores/ui.svelte';
   import { settingsStore } from '$lib/stores/settings.svelte';
+  import { setTelemetryEnabled } from '$lib/services/telemetryService';
+  import * as backupService from '$lib/services/backupService';
+  import type { BackupEntry } from '$lib/services/backupService';
+
+  let backups = $state<BackupEntry[]>([]);
+  let backingUp = $state(false);
+  let restoring = $state(false);
 
   function handleClose() {
     uiStore.showSettingsModal = false;
@@ -13,6 +20,56 @@
   function handleKeydown(e: KeyboardEvent) {
     if (e.key === 'Escape') handleClose();
   }
+
+  async function loadBackups() {
+    try {
+      backups = await backupService.listBackups();
+    } catch {
+      // silently fail
+    }
+  }
+
+  async function handleBackupNow() {
+    backingUp = true;
+    try {
+      await backupService.backupConfigs();
+      settingsStore.setLastBackupDate(new Date().toISOString().slice(0, 10));
+      uiStore.showSuccess('Backup created successfully');
+      await loadBackups();
+    } catch {
+      uiStore.showError('Failed to create backup');
+    }
+    backingUp = false;
+  }
+
+  async function handleRestore(filename: string) {
+    restoring = true;
+    try {
+      await backupService.restoreBackup(filename);
+      uiStore.showSuccess('Backup restored. Restart the app to apply changes.');
+    } catch {
+      uiStore.showError('Failed to restore backup');
+    }
+    restoring = false;
+  }
+
+  async function handleDeleteBackup(filename: string) {
+    try {
+      await backupService.deleteBackup(filename);
+      await loadBackups();
+    } catch {
+      uiStore.showError('Failed to delete backup');
+    }
+  }
+
+  function formatBytes(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  // Load backups when modal opens
+  loadBackups();
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -179,6 +236,112 @@
           </div>
         </div>
       </div>
+
+      <div class="settings-section">
+        <h3 class="section-title">Privacy & Data</h3>
+
+        <div class="setting-row">
+          <div class="setting-label">
+            <span class="label-text">Send Crash Reports</span>
+            <span class="label-hint">Help improve QueryArk by sending anonymous error reports</span>
+          </div>
+          <div class="setting-control">
+            <label class="toggle">
+              <input
+                type="checkbox"
+                checked={settingsStore.crashReportingEnabled}
+                onchange={(e) => settingsStore.setCrashReportingEnabled(e.currentTarget.checked)}
+              />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-label">
+            <span class="label-text">Anonymous Usage Analytics</span>
+            <span class="label-hint">Share anonymous usage data to help prioritize features</span>
+          </div>
+          <div class="setting-control">
+            <label class="toggle">
+              <input
+                type="checkbox"
+                checked={settingsStore.telemetryEnabled}
+                onchange={(e) => {
+                  settingsStore.setTelemetryEnabled(e.currentTarget.checked);
+                  setTelemetryEnabled(e.currentTarget.checked);
+                }}
+              />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-label">
+            <span class="label-text">Auto-Backup Configs</span>
+            <span class="label-hint">Automatically back up connection and settings files daily</span>
+          </div>
+          <div class="setting-control">
+            <label class="toggle">
+              <input
+                type="checkbox"
+                checked={settingsStore.autoBackupEnabled}
+                onchange={(e) => settingsStore.setAutoBackupEnabled(e.currentTarget.checked)}
+              />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-label">
+            <span class="label-text">Manual Backup</span>
+            <span class="label-hint">Create a backup of your connections and settings now</span>
+          </div>
+          <div class="setting-control">
+            <button class="backup-btn" onclick={handleBackupNow} disabled={backingUp}>
+              {backingUp ? 'Backing up...' : 'Backup Now'}
+            </button>
+          </div>
+        </div>
+
+        {#if backups.length > 0}
+          <div class="backup-list">
+            <div class="backup-list-header">Saved Backups</div>
+            {#each backups as backup}
+              <div class="backup-item">
+                <div class="backup-info">
+                  <span class="backup-name">{backup.filename}</span>
+                  <span class="backup-meta">{formatBytes(backup.size_bytes)}</span>
+                </div>
+                <div class="backup-actions">
+                  <button
+                    class="backup-action-btn"
+                    title="Restore"
+                    onclick={() => handleRestore(backup.filename)}
+                    disabled={restoring}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                      <path d="M2 8a6 6 0 1111.3-2.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                      <path d="M14 2v4h-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </button>
+                  <button
+                    class="backup-action-btn delete"
+                    title="Delete"
+                    onclick={() => handleDeleteBackup(backup.filename)}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                      <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
     </div>
   </div>
 </div>
@@ -297,5 +460,112 @@
     font-size: 11px;
     color: var(--text-muted);
     min-width: 28px;
+  }
+
+  .backup-btn {
+    padding: 4px 12px;
+    font-size: 12px;
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+  }
+
+  .backup-btn:hover:not(:disabled) {
+    background: var(--bg-hover);
+    border-color: var(--accent);
+  }
+
+  .backup-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .backup-list {
+    margin-top: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .backup-list-header {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 6px 10px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .backup-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    font-size: 11px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .backup-item:last-child {
+    border-bottom: none;
+  }
+
+  .backup-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  .backup-name {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .backup-meta {
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .backup-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .backup-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: none;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+    padding: 0;
+  }
+
+  .backup-action-btn:hover {
+    background: var(--bg-hover);
+    color: var(--accent);
+  }
+
+  .backup-action-btn.delete:hover {
+    color: var(--error);
+  }
+
+  .backup-action-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
   }
 </style>

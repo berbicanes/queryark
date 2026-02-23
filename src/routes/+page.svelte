@@ -36,6 +36,10 @@
   import BookmarkList from '$lib/components/modals/BookmarkList.svelte';
   import WorkspaceModal from '$lib/components/modals/WorkspaceModal.svelte';
   import ParameterPrompt from '$lib/components/modals/ParameterPrompt.svelte';
+  import WhatsNewModal from '$lib/components/modals/WhatsNewModal.svelte';
+  import { initSentry } from '$lib/services/sentryService';
+  import { initTelemetry, trackEvent } from '$lib/services/telemetryService';
+  import * as backupService from '$lib/services/backupService';
 
   let lastExecutionTime = $state<number | null>(null);
   let lastRowCount = $state<number | null>(null);
@@ -140,6 +144,50 @@
     // Phase 4: Event listeners, update check, mark startup complete
     window.addEventListener('queryark:refresh-schema', handleSchemaRefresh);
     setTimeout(() => checkForUpdates(), 5000);
+
+    // Phase 23: Init Sentry + telemetry
+    initSentry(settingsStore.crashReportingEnabled);
+    const sessionId = initTelemetry(
+      settingsStore.telemetryEnabled,
+      settingsStore.telemetrySessionId,
+    );
+    if (!settingsStore.telemetrySessionId) {
+      settingsStore.setTelemetrySessionId(sessionId);
+    }
+    trackEvent('app_launch');
+
+    // Phase 23: Check What's New
+    try {
+      const { getVersion } = await import('@tauri-apps/api/app');
+      const currentVersion = await getVersion();
+      if (settingsStore.lastSeenVersion && settingsStore.lastSeenVersion !== currentVersion) {
+        uiStore.showWhatsNewModal = true;
+      }
+    } catch {
+      // Not in Tauri context
+    }
+
+    // Phase 23: Auto-backup once daily
+    if (settingsStore.autoBackupEnabled) {
+      const lastBackup = settingsStore.lastBackupDate;
+      const now = new Date().toISOString().slice(0, 10);
+      if (!lastBackup || lastBackup < now) {
+        try {
+          await backupService.backupConfigs();
+          settingsStore.setLastBackupDate(now);
+          // Prune old backups — keep max 10
+          const backups = await backupService.listBackups();
+          if (backups.length > 10) {
+            for (const old of backups.slice(10)) {
+              await backupService.deleteBackup(old.filename);
+            }
+          }
+        } catch {
+          // Best-effort backup
+        }
+      }
+    }
+
     startupComplete = true;
   });
 
@@ -340,6 +388,10 @@
 
 {#if uiStore.showParameterPrompt}
   <ParameterPrompt />
+{/if}
+
+{#if uiStore.showWhatsNewModal}
+  <WhatsNewModal />
 {/if}
 
 {#if uiStore.errorMessage}

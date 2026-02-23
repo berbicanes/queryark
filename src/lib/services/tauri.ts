@@ -1,4 +1,5 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invoke as tauriInvoke } from '@tauri-apps/api/core';
+import { captureError } from '$lib/services/sentryService';
 import type { ConnectionConfig, DatabaseCategory } from '$lib/types/connection';
 import type { QueryResponse, SortColumn, FilterCondition, CellValue, ColumnDef } from '$lib/types/query';
 import type {
@@ -7,6 +8,16 @@ import type {
   TableStats, RoutineInfo, SequenceInfo, EnumInfo
 } from '$lib/types/schema';
 import type { ImportResult } from '$lib/types/export';
+
+// Wrapper that captures IPC errors to Sentry
+async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+  try {
+    return await tauriInvoke<T>(cmd, args);
+  } catch (error) {
+    captureError(error, { command: cmd, args });
+    throw error;
+  }
+}
 
 // Connection management
 export async function connectDb(config: ConnectionConfig): Promise<string> {

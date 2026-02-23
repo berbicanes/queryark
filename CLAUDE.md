@@ -58,7 +58,10 @@ src/                          # Frontend (SvelteKit)
 │   │   ├── schemaService.ts  # SQL-specific + generic container/item/field loaders
 │   │   ├── documentService.ts # MongoDB/DynamoDB CRUD
 │   │   ├── keyvalueService.ts # Redis operations
-│   │   └── graphService.ts   # Neo4j browsing
+│   │   ├── graphService.ts   # Neo4j browsing
+│   │   ├── sentryService.ts  # Sentry crash reporting init + error capture
+│   │   ├── telemetryService.ts # Lightweight anonymous event tracking
+│   │   └── backupService.ts  # Config backup/restore/list/delete wrappers
 │   ├── stores/               # Svelte 5 rune stores (connections, tabs, schema, ui,
 │   │                         # transaction, changeTracker)
 │   ├── types/
@@ -69,7 +72,8 @@ src/                          # Frontend (SvelteKit)
 │   │   ├── tabs.ts           # TabType: query | table | document | keyvalue | graph | diagram | tablediff | datadiff | visualquery | bookmark | resultcompare
 │   │   ├── diagram.ts        # DiagramTable, DiagramColumn, DiagramRelationship
 │   │   ├── diff.ts           # ColumnDiff, IndexDiff, ForeignKeyDiff, TableDiffResult, DataDiffResult
-│   │   └── visualQuery.ts    # VQTable, VQJoin, VQWhereClause, VQState
+│   │   ├── visualQuery.ts    # VQTable, VQJoin, VQWhereClause, VQState
+│   │   └── changelog.ts     # ChangelogEntry type + CHANGELOG array
 │   └── utils/                # formatters, sqlHelpers, diagramLayout,
 │                             # schemaDiff, dataDiff, migrationGenerator, visualQueryBuilder
 ├── routes/
@@ -90,7 +94,8 @@ src-tauri/                    # Backend (Rust)
 │   │   ├── transaction.rs    # begin_transaction, commit_transaction, rollback_transaction
 │   │   ├── document.rs       # insert_document, update_document, delete_documents
 │   │   ├── keyvalue.rs       # get_value, set_value, delete_keys, get_key_type, scan_keys
-│   │   └── graph.rs          # get_labels, get_relationship_types, get_node_properties, get_nodes
+│   │   ├── graph.rs          # get_labels, get_relationship_types, get_node_properties, get_nodes
+│   │   └── backup.rs         # backup_configs, list_backups, restore_backup, delete_backup
 │   ├── db/
 │   │   ├── cancel.rs         # CancellationRegistry (query cancellation via oneshot channels)
 │   │   ├── pool.rs           # PoolManager (HashMap<String, Arc<DriverHandle>>)
@@ -115,7 +120,7 @@ src-tauri/                    # Backend (Rust)
 │   │       ├── oracle.rs     # Oracle (stub, feature-gated)
 │   │       ├── snowflake.rs  # Snowflake (stub, feature-gated)
 │   │       └── bigquery.rs   # BigQuery (stub, feature-gated)
-│   ├── models/               # Serde structs (connection, query, schema)
+│   ├── models/               # Serde structs (connection, query, schema, backup)
 │   ├── error.rs              # AppError enum
 │   ├── lib.rs                # Tauri app builder + command registration (35+ commands)
 │   └── main.rs               # Entry point
@@ -223,6 +228,11 @@ npm run check            # TypeScript/Svelte type checking
 - Side-by-side result comparison — buffer a result, then compare with another query's result in a dedicated tab, positional or key-based row matching, filter by status
 - Query profiling dashboard — enhanced EXPLAIN ANALYZE viewer with tree, timeline, optimization hints, and raw views, execution stats summary
 - Auto-suggest indexes — analyze slow queries (>500ms) for WHERE/JOIN/ORDER BY/GROUP BY columns, generate CREATE INDEX DDL, open in query tab
+- Crash reporting — opt-in Sentry integration via @sentry/browser, PII-stripped, captures unhandled errors and IPC failures
+- Anonymous telemetry — lightweight custom fetch-based event tracking (app_launch, connection_created, query_executed), opt-out by default
+- In-app "What's New" — changelog modal shown after auto-update with version-grouped highlights, accessible from About screen
+- Config auto-backup — automatic daily backup of connections.json + settings.json to timestamped files, restore/delete UI in Settings, max 10 backups retained
+- E2E test scaffolding — Playwright tests with mock Tauri IPC layer, Docker Compose multi-DB (PostgreSQL, MySQL, Redis, MongoDB)
 
 ### Stub databases (feature-gated, not yet functional):
 - Oracle (`cargo build --features oracle` — requires Oracle Instant Client)
@@ -407,12 +417,12 @@ Separate repository — SvelteKit static site deployed to Vercel/Netlify/Cloudfl
 - [x] **Query profiling dashboard**: Enhanced EXPLAIN viewer with tree/timeline/hints/raw views, execution stats summary, rule-based optimization hints (seq scan, join, sort, row estimate drift)
 - [x] **Auto-suggest indexes**: Analyze slow queries (>500ms) for WHERE/JOIN/ORDER BY/GROUP BY columns, generate dialect-aware CREATE INDEX DDL, open in query tab or copy
 
-### Phase 23: Quality & Trust
-- [ ] **End-to-end test suite**: Playwright tests against Docker-based test databases (PostgreSQL, MySQL, SQLite, MongoDB, Redis)
-- [ ] **Crash reporting**: Opt-in crash reporting via Sentry or similar service
-- [ ] **Anonymous telemetry**: Opt-in usage analytics for feature prioritization (Plausible/PostHog)
-- [ ] **In-app "What's New"**: Show changelog highlights after auto-update
-- [ ] **Config auto-backup**: Automatically back up connection configs to timestamped files
+### Phase 23: Quality & Trust ✅
+- [x] **End-to-end test suite**: Playwright tests with mock Tauri IPC layer, Docker Compose multi-DB (PostgreSQL, MySQL, Redis, MongoDB)
+- [x] **Crash reporting**: Opt-in crash reporting via @sentry/browser (frontend-only, PII-stripped)
+- [x] **Anonymous telemetry**: Custom lightweight fetch-based telemetry (Plausible-compatible), opt-out by default
+- [x] **In-app "What's New"**: Changelog modal shown after auto-update, accessible from About screen
+- [x] **Config auto-backup**: Automatic daily backup of connections.json + settings.json with restore/delete UI in Settings
 
 ### Phase 24: Schema Navigation & Management ✅
 - [x] **Active schema selector**: Dropdown at the top of the schema tree to pick the active/default schema, filters tree to show only selected schema(s)
