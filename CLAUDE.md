@@ -177,6 +177,10 @@ npm run check            # TypeScript/Svelte type checking
 - Backend cursor/streaming — server-side query pagination with `execute_query_page` and `count_query_rows` commands, automatic transition from client-side to server-side pagination when results are truncated, LIMIT/OFFSET wrapping with dialect-aware SQL (MSSQL OFFSET...FETCH vs standard LIMIT...OFFSET)
 - Lazy column loading — large TEXT/JSON/Binary values truncated at configurable threshold (default 256 chars), `LargeText`/`LargeJson`/`LargeBinary` cell variants with preview + full_length, on-demand `fetch_full_cell` command to load full value, expand button in GridCell with size badge
 - Max cell preview size setting — configurable truncation threshold (64-10000 chars) in Settings modal, passed to all query execution commands
+- CI/CD pipeline — GitHub Actions workflows for CI checks (push/PR) and tag-triggered release builds across macOS (ARM + Intel), Windows, and Linux
+- Auto-updater — in-app update notifications via tauri-plugin-updater, download + install + relaunch from status bar, GitHub Releases endpoint
+- Installer packaging — .dmg (macOS), .exe/.msi (Windows), .deb/.rpm/.AppImage (Linux) via tauri-action
+- Code signing ready — workflows pass through signing secrets; signs automatically when GitHub secrets are configured
 
 ### Stub databases (feature-gated, not yet functional):
 - Oracle (`cargo build --features oracle` — requires Oracle Instant Client)
@@ -278,7 +282,7 @@ npm run check            # TypeScript/Svelte type checking
 - [x] **Cancel button UI**: Show Cancel button next to spinner during query execution, call cancel_query command on click
 
 ### Phase 13: Production Readiness (partial) ✅
-- [ ] **Auto-update mechanism**: Integrate @tauri-apps/plugin-updater for in-app update notifications and automatic downloads
+- [x] **Auto-update mechanism**: Integrate @tauri-apps/plugin-updater for in-app update notifications and automatic downloads
 - [x] **Window state persistence**: Remember window size, position, sidebar width, and open tabs on restart using plugin-store
 - [x] **Session restore**: Reopen last active tabs and connection on app launch
 - [x] **Confirmation dialogs for destructive actions**: Confirm before DROP TABLE, bulk DELETE rows, disconnect with unsaved changes, close tabs with unsaved queries
@@ -301,15 +305,15 @@ npm run check            # TypeScript/Svelte type checking
 - [x] **Large cell text truncation**: Display-layer truncation (500 chars) with character count badge for long text/JSON cells
 - [x] **Connection pool tuning**: Configurable pool size (1–50), idle timeout (10–3600s), acquire timeout (5–60s) per connection in Advanced section of connection modal
 
-### Phase 16: Build & Distribution
-- [ ] **GitHub Actions CI/CD**: Automated build pipeline for macOS (universal binary: x64 + ARM), Windows (x64), and Linux (x64)
-- [ ] **Code signing — macOS**: Apple Developer certificate, notarization via `xcrun notarytool`, stapling, Gatekeeper-compatible DMG
-- [ ] **Code signing — Windows**: Authenticode signing with EV or OV certificate, SmartScreen reputation
-- [ ] **Installer packaging — macOS**: DMG with drag-to-Applications
-- [ ] **Installer packaging — Windows**: NSIS installer + MSI + portable .exe
-- [ ] **Installer packaging — Linux**: AppImage (universal), .deb (Debian/Ubuntu/Mint/Pop!_OS), .rpm (Fedora/RHEL/CentOS/openSUSE), .pacman (Arch/Manjaro), Flatpak (Flathub for all distros), Snap (Snapcraft store)
-- [ ] **Auto-updater backend**: GitHub Releases or custom update server endpoint for @tauri-apps/plugin-updater, JSON manifest with version/platform/signature
-- [ ] **Release automation**: Tag-triggered builds, changelog generation, draft GitHub Release with all platform artifacts attached
+### Phase 16: Build & Distribution ✅
+- [x] **GitHub Actions CI/CD**: Automated build pipeline for macOS (ARM + Intel), Windows (x64), and Linux (x64) — `.github/workflows/ci.yml`
+- [x] **Code signing — macOS**: Workflow passes signing env vars through; signs automatically when GitHub secrets are configured
+- [x] **Code signing — Windows**: Workflow passes signing env vars through; signs automatically when GitHub secrets are configured
+- [x] **Installer packaging — macOS**: DMG via tauri-action (ARM + Intel separate builds)
+- [x] **Installer packaging — Windows**: NSIS installer (.exe) + MSI via tauri-action
+- [x] **Installer packaging — Linux**: .deb, .rpm, .AppImage via tauri-action
+- [x] **Auto-updater backend**: GitHub Releases endpoint with `latest.json` manifest, tauri-plugin-updater integrated with status bar UI
+- [x] **Release automation**: Tag-triggered builds via `.github/workflows/release.yml`, draft GitHub Release with all platform artifacts
 
 ### Phase 17: Product Website
 Separate repository — SvelteKit static site deployed to Vercel/Netlify/Cloudflare Pages.

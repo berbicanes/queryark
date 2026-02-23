@@ -3,6 +3,7 @@
   import { connectionStore } from '$lib/stores/connections.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
   import { formatDuration, formatRowCount } from '$lib/utils/formatters';
+  import { updaterState, installUpdate } from '$lib/services/updaterService';
 
   let { executionTime = null, rowCount = null }: {
     executionTime: number | null;
@@ -54,6 +55,17 @@
       <span class="row-count">
         {formatRowCount(rowCount)} {rowCount === 1 ? 'row' : 'rows'}
       </span>
+    {/if}
+    {#if updaterState.updateAvailable}
+      <button class="update-badge" onclick={installUpdate} disabled={updaterState.updateProgress === 'downloading' || updaterState.updateProgress === 'installing'}>
+        {#if updaterState.updateProgress === 'downloading'}
+          Downloading...
+        {:else if updaterState.updateProgress === 'installing'}
+          Installing...
+        {:else}
+          Update v{updaterState.updateVersion} available
+        {/if}
+      </button>
     {/if}
     {#if appVersion}
       <span class="version-label">v{appVersion}</span>
@@ -132,6 +144,27 @@
     color: var(--text-muted);
     font-family: var(--font-mono);
     font-size: 10px;
+  }
+
+  .update-badge {
+    background: var(--accent);
+    color: var(--bg-primary);
+    border: none;
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .update-badge:hover {
+    opacity: 0.85;
+  }
+
+  .update-badge:disabled {
+    opacity: 0.6;
+    cursor: default;
   }
 
   .version-label {

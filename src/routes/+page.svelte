@@ -8,6 +8,7 @@
   import { settingsStore } from '$lib/stores/settings.svelte';
   import * as connectionService from '$lib/services/connectionService';
   import * as schemaService from '$lib/services/schemaService';
+  import { checkForUpdates } from '$lib/services/updaterService';
   import { DB_METADATA } from '$lib/types/database';
   import Toolbar from '$lib/components/Toolbar.svelte';
   import Sidebar from '$lib/components/sidebar/Sidebar.svelte';
@@ -78,6 +79,9 @@
     } catch {
       // Not running in Tauri (e.g. dev server in browser)
     }
+
+    // Check for updates after a short delay
+    setTimeout(() => checkForUpdates(), 5000);
 
     // Session restore: reopen tabs and reconnect
     if (settingsStore.restoreSession) {

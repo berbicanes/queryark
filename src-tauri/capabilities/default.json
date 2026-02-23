@@ -11,6 +11,8 @@
     "store:allow-save",
     "store:allow-load",
     "dialog:allow-save",
-    "dialog:allow-open"
+    "dialog:allow-open",
+    "updater:default",
+    "process:allow-restart"
   ]
 }
