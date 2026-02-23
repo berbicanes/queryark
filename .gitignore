@@ -8,3 +8,13 @@ node_modules
 !.env.example
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Claude Code sessions
+.claude/
+
+# Test output
+playwright-report/
+test-results/
+
+# Website (separate deployment)
+website/
