@@ -262,7 +262,7 @@
   .tab-bar {
     display: flex;
     align-items: stretch;
-    height: 34px;
+    height: 36px;
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
@@ -287,13 +287,13 @@
     gap: 6px;
     padding: 0 12px;
     font-size: 12px;
-    color: var(--text-secondary);
+    color: var(--text-muted);
     white-space: nowrap;
     border: none;
     background: none;
     border-right: 1px solid var(--border-color);
     cursor: pointer;
-    transition: background var(--transition-fast), color var(--transition-fast);
+    transition: background var(--transition-subtle), color var(--transition-subtle);
     min-width: 100px;
     max-width: 200px;
     position: relative;
@@ -339,6 +339,7 @@
     background: var(--accent);
     border-radius: 1px;
     z-index: 5;
+    box-shadow: 0 0 6px rgba(122, 162, 247, 0.4);
   }
 
   .tab-color-stripe {
@@ -380,7 +381,7 @@
     color: var(--text-muted);
     flex-shrink: 0;
     opacity: 0;
-    transition: opacity var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+    transition: opacity var(--transition-subtle), background var(--transition-micro), color var(--transition-micro);
     padding: 0;
     border: none;
     background: none;
@@ -393,8 +394,8 @@
   }
 
   .tab-close:hover {
-    background: var(--bg-active);
-    color: var(--text-primary);
+    background: rgba(243, 139, 168, 0.15);
+    color: var(--error);
   }
 
   .new-tab-btn {
@@ -420,12 +421,18 @@
   .context-menu {
     position: fixed;
     z-index: 500;
-    background: var(--bg-secondary);
+    background: var(--bg-elevated, var(--bg-secondary));
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
     padding: 4px 0;
     min-width: 140px;
+    animation: ctxMenuIn 120ms var(--ease-out-expo);
+  }
+
+  @keyframes ctxMenuIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
   }
 
   .context-item {

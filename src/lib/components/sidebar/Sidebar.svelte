@@ -131,10 +131,10 @@
   }
 
   .sidebar-title {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
     color: var(--text-muted);
   }
 
@@ -142,11 +142,12 @@
     color: var(--text-secondary);
     padding: 2px;
     border-radius: var(--radius-sm);
+    transition: color var(--transition-subtle), background var(--transition-subtle);
   }
 
   .add-btn:hover {
     color: var(--accent);
-    background: var(--bg-hover);
+    background: rgba(122, 162, 247, 0.1);
   }
 
   .sidebar-content {
@@ -167,10 +168,10 @@
   }
 
   .section-title {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
     color: var(--text-muted);
   }
 

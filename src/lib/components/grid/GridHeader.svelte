@@ -215,6 +215,7 @@
   .grid-header {
     background: var(--bg-tertiary);
     border-bottom: 2px solid var(--border-color);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
 
   .header-row {
@@ -297,9 +298,11 @@
   }
 
   .col-name {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-primary);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -307,9 +310,10 @@
   }
 
   .col-type {
-    font-size: 10px;
+    font-size: 9px;
     color: var(--text-muted);
     font-family: var(--font-mono);
+    opacity: 0.7;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -337,11 +341,17 @@
     width: 5px;
     cursor: col-resize;
     z-index: 1;
+    opacity: 0;
+    transition: opacity var(--transition-subtle, 150ms ease);
+  }
+
+  .header-cell.data-col:hover .resize-handle {
+    opacity: 1;
   }
 
   .resize-handle:hover {
     background: var(--accent);
-    opacity: 0.4;
+    opacity: 0.5;
   }
 
   .row-checkbox {

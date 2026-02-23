@@ -182,22 +182,24 @@
   .grid-cell.modified {
     border-left: 3px solid var(--warning, #fab387);
     padding-left: 7px;
+    background: rgba(249, 226, 175, 0.03);
   }
 
   .null-badge {
     display: inline-flex;
     align-items: center;
-    padding: 1px 6px;
+    padding: 1px 8px;
     font-size: 9px;
     font-weight: 700;
     font-family: var(--font-mono);
     color: var(--text-muted);
     background: var(--bg-tertiary, rgba(69, 71, 90, 0.3));
     border: 1px solid var(--border-color);
-    border-radius: 3px;
+    border-radius: 9999px;
     opacity: 0.7;
     line-height: 1.2;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
   }
 
   .grid-cell.numeric {
@@ -228,6 +230,7 @@
     border: 1px solid var(--accent);
     border-radius: 2px;
     outline: none;
+    box-shadow: 0 0 0 3px rgba(122, 162, 247, 0.15);
   }
 
   .null-btn {

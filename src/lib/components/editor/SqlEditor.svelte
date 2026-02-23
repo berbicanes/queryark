@@ -48,15 +48,18 @@
       fontFamily: 'var(--font-mono)',
       caretColor: 'var(--accent)',
       padding: '8px 0',
+      lineHeight: '1.6',
     },
     '.cm-gutters': {
       backgroundColor: 'var(--bg-secondary)',
       color: 'var(--text-muted)',
       border: 'none',
       borderRight: '1px solid var(--border-color)',
+      minWidth: '48px',
     },
     '.cm-activeLineGutter': {
-      backgroundColor: 'var(--bg-tertiary)',
+      backgroundColor: 'transparent',
+      color: 'var(--text-primary)',
     },
     '.cm-cursor': {
       borderLeftColor: 'var(--accent)',
@@ -101,7 +104,7 @@
   const darkTheme = EditorView.theme({
     ...appThemeBase,
     '.cm-activeLine': {
-      backgroundColor: 'rgba(69, 69, 90, 0.3)',
+      backgroundColor: 'rgba(69, 69, 90, 0.2)',
     },
     '.cm-selectionBackground': {
       backgroundColor: 'rgba(122, 162, 247, 0.2) !important',

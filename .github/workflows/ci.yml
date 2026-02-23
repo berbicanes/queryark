@@ -34,16 +34,13 @@ jobs:
             libappindicator3-dev \
             librsvg2-dev \
             patchelf \
-            libdbus-1-dev \
-            protobuf-compiler
+            libdbus-1-dev
 
-      - name: Install protoc (macOS)
-        if: runner.os == 'macOS'
-        run: brew install protobuf
-
-      - name: Install protoc (Windows)
-        if: runner.os == 'Windows'
-        run: choco install protoc -y
+      - name: Install protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          version: '27.x'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

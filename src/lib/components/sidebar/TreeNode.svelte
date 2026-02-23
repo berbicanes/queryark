@@ -124,15 +124,15 @@
     align-items: center;
     gap: 4px;
     width: 100%;
-    padding: 3px 8px;
+    padding: 2px 8px;
     font-size: 12px;
     color: var(--text-primary);
     text-align: left;
     cursor: pointer;
     border: none;
     background: none;
-    transition: background var(--transition-fast);
-    min-height: 24px;
+    transition: background var(--transition-micro);
+    min-height: 26px;
   }
 
   .node-row:hover {
@@ -141,7 +141,9 @@
 
   .chevron {
     flex-shrink: 0;
-    transition: transform var(--transition-fast);
+    width: 10px;
+    height: 10px;
+    transition: transform var(--transition-micro);
     color: var(--text-muted);
   }
 
@@ -179,8 +181,10 @@
   .node-suffix {
     flex-shrink: 0;
     font-size: 10px;
+    font-family: var(--font-mono);
     color: var(--text-muted);
     margin-left: 4px;
+    opacity: 0.7;
   }
 
   .node-spinner {
@@ -200,5 +204,17 @@
 
   .node-children {
     width: 100%;
+    position: relative;
+  }
+
+  .node-children::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--border-color);
+    opacity: 0.4;
   }
 </style>

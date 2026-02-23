@@ -11,19 +11,19 @@
 
 :root {
   /* Background colors */
-  --bg-primary: #1e1e2e;
-  --bg-secondary: #2a2a3c;
-  --bg-tertiary: #313244;
+  --bg-primary: #1a1b2e;
+  --bg-secondary: #22233a;
+  --bg-tertiary: #2d2e48;
   --bg-hover: #3a3a4e;
   --bg-active: #454560;
 
   /* Text colors */
-  --text-primary: #cdd6f4;
+  --text-primary: #d0d8f4;
   --text-secondary: #a6adc8;
   --text-muted: #6c7086;
 
   /* Border */
-  --border-color: #45475a;
+  --border-color: #3a3b54;
 
   /* Accent & status colors */
   --accent: #7aa2f7;
@@ -56,6 +56,66 @@
   /* Transitions */
   --transition-fast: 100ms ease;
   --transition-normal: 200ms ease;
+
+  /* Typography scale */
+  --font-size-2xs: 9px;
+  --font-size-xs: 10px;
+  --font-size-sm: 11px;
+  --font-size-base: 13px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 32px;
+
+  /* Font weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Letter spacing */
+  --letter-spacing-tight: -0.3px;
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide: 0.3px;
+  --letter-spacing-wider: 0.5px;
+  --letter-spacing-widest: 0.8px;
+
+  /* Line heights */
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.6;
+
+  /* Extended spacing */
+  --spacing-2xl: 32px;
+  --spacing-3xl: 48px;
+  --spacing-4xl: 64px;
+
+  /* Extended radii */
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-full: 9999px;
+
+  /* Easing curves */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Refined transitions */
+  --transition-micro: 80ms var(--ease-in-out);
+  --transition-subtle: 150ms var(--ease-out-expo);
+  --transition-smooth: 250ms var(--ease-out-expo);
+
+  /* Focus ring */
+  --focus-ring: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--accent);
+
+  /* Surface colors */
+  --bg-surface: #252537;
+  --bg-elevated: #2e2e42;
+
+  /* Overlays */
+  --overlay-light: rgba(255, 255, 255, 0.03);
+  --overlay-medium: rgba(255, 255, 255, 0.06);
 }
 
 html, body {
@@ -79,17 +139,17 @@ body {
 
 /* Scrollbar styling */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-primary);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--bg-tertiary);
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -97,7 +157,7 @@ body {
 }
 
 ::-webkit-scrollbar-corner {
-  background: var(--bg-primary);
+  background: transparent;
 }
 
 /* Base element styles */
@@ -115,19 +175,31 @@ input, select, textarea {
   font-family: var(--font-sans);
   font-size: 13px;
   color: var(--text-primary);
-  background: var(--bg-primary);
+  background-color: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   padding: var(--spacing-xs) var(--spacing-sm);
   outline: none;
+  color-scheme: dark;
 }
 
 input:focus, select:focus, textarea:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(122, 162, 247, 0.15);
 }
 
 select {
   cursor: pointer;
+}
+
+option, optgroup {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+optgroup {
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 a {
@@ -227,6 +299,11 @@ a:hover {
 
 .btn:active {
   background: var(--bg-active);
+  transform: scale(0.98);
+}
+
+.btn:focus-visible {
+  box-shadow: var(--focus-ring);
 }
 
 .btn-primary {
@@ -236,6 +313,7 @@ a:hover {
 
 .btn-primary:hover {
   background: var(--accent-hover);
+  box-shadow: 0 0 12px rgba(122, 162, 247, 0.3);
 }
 
 .btn-danger {
@@ -256,11 +334,11 @@ a:hover {
   display: inline-flex;
   align-items: center;
   padding: 1px 6px;
-  border-radius: 10px;
-  font-size: 10px;
-  font-weight: 600;
+  border-radius: var(--radius-full);
+  font-size: 9px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
 }
 
 .badge-pg {
@@ -389,18 +467,30 @@ a:hover {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(4px);
 }
 
 .modal-card {
-  background: var(--bg-secondary);
+  background: var(--bg-elevated, var(--bg-secondary));
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
   min-width: 400px;
   max-width: 90vw;
   max-height: 90vh;
   overflow: auto;
+  animation: modalSlideIn 200ms var(--ease-out-expo);
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .modal-header {
@@ -498,6 +588,7 @@ a:hover {
   color: var(--text-muted);
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
+  border-bottom-width: 2px;
   border-radius: 3px;
   line-height: 1.4;
 }
@@ -595,11 +686,11 @@ a:hover {
 
 @keyframes slideIn {
   from {
-    transform: translateY(20px);
+    transform: translateY(20px) scale(0.95);
     opacity: 0;
   }
   to {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
 }
@@ -608,6 +699,8 @@ a:hover {
    Light Theme (Catppuccin Latte)
    ────────────────────────────────────────────── */
 [data-theme="light"] {
+  color-scheme: light;
+
   /* Background colors */
   --bg-primary: #eff1f5;
   --bg-secondary: #e6e9ef;
@@ -634,6 +727,11 @@ a:hover {
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --bg-surface: #dce0e8;
+  --bg-elevated: #e6e9ef;
+  --overlay-light: rgba(0, 0, 0, 0.02);
+  --overlay-medium: rgba(0, 0, 0, 0.04);
+  --focus-ring: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--accent);
 }
 
 /* Light-mode btn-primary needs white text */
@@ -735,7 +833,7 @@ a:hover {
 
 /* Light-mode scrollbar */
 [data-theme="light"] ::-webkit-scrollbar-track {
-  background: var(--bg-primary);
+  background: transparent;
 }
 
 [data-theme="light"] ::-webkit-scrollbar-thumb {

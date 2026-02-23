@@ -160,8 +160,9 @@
 
   .range-info {
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 10px;
     color: var(--text-secondary);
+    letter-spacing: 0.3px;
   }
 
   .page-indicator {
@@ -174,14 +175,14 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: var(--radius-sm);
+    width: 26px;
+    height: 26px;
+    border-radius: var(--radius-md);
     color: var(--text-secondary);
     background: none;
     border: none;
     cursor: pointer;
-    transition: background var(--transition-fast), color var(--transition-fast);
+    transition: background var(--transition-micro, 80ms ease), color var(--transition-micro, 80ms ease);
     padding: 0;
   }
 

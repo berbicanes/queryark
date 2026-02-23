@@ -503,12 +503,12 @@
     gap: 4px;
     padding: 4px 12px;
     font-size: 12px;
-    color: var(--text-secondary);
+    color: var(--text-muted);
     border: none;
     background: none;
     cursor: pointer;
     position: relative;
-    transition: color var(--transition-fast);
+    transition: color var(--transition-subtle, 150ms ease);
   }
 
   .sub-tab:hover {
@@ -517,6 +517,7 @@
 
   .sub-tab.active {
     color: var(--accent);
+    font-weight: 600;
   }
 
   .sub-tab.active::after {
@@ -527,7 +528,7 @@
     right: 4px;
     height: 2px;
     background: var(--accent);
-    border-radius: 1px;
+    border-radius: 1px 1px 0 0;
   }
 
   .sub-tab-title {

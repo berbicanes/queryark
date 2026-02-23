@@ -484,15 +484,17 @@
   }
 
   .row-info {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--text-muted);
     font-family: var(--font-mono);
+    letter-spacing: 0.3px;
   }
 
   .selection-info {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--accent);
     font-family: var(--font-mono);
+    letter-spacing: 0.3px;
   }
 
   .empty-state {

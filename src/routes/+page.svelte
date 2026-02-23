@@ -29,6 +29,7 @@
 
   let lastExecutionTime = $state<number | null>(null);
   let lastRowCount = $state<number | null>(null);
+  let startupComplete = $state(false);
 
   onMount(async () => {
     await connectionStore.init();
@@ -36,9 +37,9 @@
     savedQueriesStore.init();
     await settingsStore.init();
 
-    // Restore sidebar layout from persisted settings
+    // Restore sidebar width from settings, but start collapsed for home screen
     uiStore.sidebarWidth = settingsStore.sidebarWidth;
-    uiStore.sidebarCollapsed = settingsStore.sidebarCollapsed;
+    uiStore.sidebarCollapsed = true;
 
     // Restore window geometry
     try {
@@ -96,6 +97,17 @@
           connectionService.connect(conn.config).catch(() => {});
         }
       }
+    }
+
+    // Mark startup complete — effects below now respond to user actions only
+    startupComplete = true;
+  });
+
+  // Dismiss home screen when a tab becomes active (after startup)
+  $effect(() => {
+    if (!startupComplete) return;
+    if (tabStore.activeTabId && tabStore.tabs.length > 0 && uiStore.showHome) {
+      uiStore.dismissHome();
     }
   });
 
@@ -207,17 +219,19 @@
   </div>
 
   <div class="main-area">
-    {#if tabStore.tabs.length > 0}
-      {#if tabStore.splitMode}
-        <SplitPane onqueryresult={handleQueryResult} />
-      {:else}
-        <TabBar />
-        <div class="tab-content-wrapper">
-          <TabContent onqueryresult={handleQueryResult} />
-        </div>
-      {/if}
-    {:else}
+    {#if uiStore.showHome}
       <WelcomeScreen onAddConnection={() => uiStore.openConnectionModal()} />
+    {:else if tabStore.tabs.length === 0}
+      <div class="empty-main">
+        <span class="text-muted">No tabs open</span>
+      </div>
+    {:else if tabStore.splitMode}
+      <SplitPane onqueryresult={handleQueryResult} />
+    {:else}
+      <TabBar />
+      <div class="tab-content-wrapper">
+        <TabContent onqueryresult={handleQueryResult} />
+      </div>
     {/if}
   </div>
 
@@ -277,7 +291,7 @@
 <style>
   .app-layout {
     display: grid;
-    grid-template-rows: 40px 1fr 28px;
+    grid-template-rows: 44px 1fr 28px;
     grid-template-columns: var(--sidebar-width) 1fr;
     grid-template-areas:
       "toolbar toolbar"
@@ -318,6 +332,14 @@
 
   .statusbar-area {
     grid-area: statusbar;
+  }
+
+  .empty-main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: 13px;
   }
 
 </style>

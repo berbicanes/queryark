@@ -871,11 +871,12 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    transition: background var(--transition-micro, 80ms ease);
   }
 
   .split-handle:hover,
   .query-tab.resizing .split-handle {
-    background: var(--bg-hover);
+    background: rgba(122, 162, 247, 0.1);
   }
 
   .handle-bar {
@@ -883,7 +884,13 @@
     height: 2px;
     background: var(--text-muted);
     border-radius: 1px;
-    opacity: 0.5;
+    opacity: 0.4;
+    transition: opacity var(--transition-micro, 80ms ease);
+  }
+
+  .split-handle:hover .handle-bar {
+    opacity: 0.7;
+    background: var(--accent);
   }
 
   .loading-state {
@@ -929,6 +936,7 @@
     color: var(--error);
     font-size: 13px;
     background: rgba(243, 139, 168, 0.05);
+    border-left: 3px solid var(--error);
   }
 
   .error-state.partial {
@@ -1042,9 +1050,10 @@
     border-radius: var(--radius-sm);
     cursor: pointer;
     margin-left: 8px;
+    transition: background var(--transition-micro, 80ms ease);
   }
 
   .cancel-btn:hover {
-    background: rgba(243, 139, 168, 0.1);
+    background: rgba(243, 139, 168, 0.15);
   }
 </style>

@@ -295,11 +295,12 @@
     align-items: center;
     gap: 8px;
     width: 100%;
-    padding: 6px 12px;
+    padding: 4px 12px;
+    height: 28px;
     font-size: 12px;
     color: var(--text-primary);
     text-align: left;
-    transition: background var(--transition-fast);
+    transition: background var(--transition-subtle);
     cursor: pointer;
     border: none;
     background: none;
@@ -310,7 +311,7 @@
   }
 
   .connection-item.active {
-    background: var(--bg-active);
+    background: rgba(122, 162, 247, 0.08);
     border-left: 2px solid var(--accent);
     padding-left: 10px;
   }
@@ -323,12 +324,18 @@
   .context-menu {
     position: fixed;
     z-index: 500;
-    background: var(--bg-secondary);
+    background: var(--bg-elevated, var(--bg-secondary));
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
     padding: 4px 0;
     min-width: 160px;
+    animation: ctxMenuIn 120ms var(--ease-out-expo);
+  }
+
+  @keyframes ctxMenuIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
   }
 
   .context-item {

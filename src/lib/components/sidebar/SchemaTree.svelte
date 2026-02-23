@@ -572,10 +572,12 @@
 
   .search-input:focus {
     border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(122, 162, 247, 0.1);
   }
 
   .search-input::placeholder {
     color: var(--text-muted);
+    font-style: italic;
   }
 
   .search-clear {

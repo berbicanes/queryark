@@ -82,12 +82,15 @@
   }
 
   .group-count {
-    font-size: 10px;
+    font-size: 9px;
+    font-family: var(--font-mono);
     color: var(--text-muted);
     background: var(--bg-tertiary);
-    padding: 0 5px;
-    border-radius: 8px;
+    padding: 0 6px;
+    border-radius: 9999px;
     flex-shrink: 0;
+    line-height: 1.6;
+    font-weight: 600;
   }
 
   .group-children {

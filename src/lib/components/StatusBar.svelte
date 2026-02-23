@@ -102,6 +102,9 @@
 
   .statusbar-center {
     flex-shrink: 0;
+    padding: 0 12px;
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
   }
 
   .statusbar-right {
@@ -138,6 +141,8 @@
 
   .execution-time {
     color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
   }
 
   .row-count {
@@ -150,8 +155,8 @@
     background: var(--accent);
     color: var(--bg-primary);
     border: none;
-    border-radius: 3px;
-    padding: 1px 6px;
+    border-radius: 9999px;
+    padding: 1px 8px;
     font-size: 10px;
     font-family: var(--font-sans);
     cursor: pointer;

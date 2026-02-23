@@ -171,12 +171,15 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 40px;
+    height: 44px;
     padding: 0 12px;
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
     user-select: none;
     -webkit-app-region: drag;
+    position: relative;
+    z-index: 2;
   }
 
   .toolbar-left, .toolbar-right {
@@ -187,10 +190,10 @@
   }
 
   .branding {
-    font-size: 14px;
-    font-weight: 700;
+    font-size: 15px;
+    font-weight: 800;
     color: var(--accent);
-    letter-spacing: -0.3px;
+    letter-spacing: -0.5px;
     padding-right: 4px;
   }
 
@@ -209,8 +212,8 @@
     border-radius: var(--radius-sm);
     font-size: 12px;
     font-weight: 500;
-    color: var(--text-primary);
-    transition: background var(--transition-fast);
+    color: var(--text-secondary);
+    transition: background var(--transition-subtle), color var(--transition-subtle);
   }
 
   .toolbar-btn:hover {
@@ -229,17 +232,18 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 4px 10px;
-    border-radius: var(--radius-sm);
+    padding: 5px 12px;
+    border-radius: var(--radius-md);
     font-size: 12px;
-    background: var(--bg-tertiary);
+    background: var(--bg-surface, var(--bg-tertiary));
     border: 1px solid var(--border-color);
     min-width: 160px;
-    transition: border-color var(--transition-fast);
+    transition: border-color var(--transition-subtle), box-shadow var(--transition-subtle);
   }
 
   .selector-btn:hover {
     border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(122, 162, 247, 0.1);
   }
 
   .conn-name {
@@ -265,12 +269,18 @@
     right: 0;
     margin-top: 4px;
     min-width: 200px;
-    background: var(--bg-secondary);
+    background: var(--bg-elevated, var(--bg-secondary));
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
     z-index: 100;
     overflow: hidden;
+    animation: dropdownSlideIn 150ms var(--ease-out-expo);
+  }
+
+  @keyframes dropdownSlideIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .dropdown-empty {

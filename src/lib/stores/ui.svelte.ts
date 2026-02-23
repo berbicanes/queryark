@@ -36,6 +36,9 @@ class UiStore {
   showCommandPalette = $state(false);
   sidebarCollapsed = $state(false);
 
+  // Home/welcome dashboard — visible on app start
+  showHome = $state(true);
+
   // Phase 10 — Settings
   showSettingsModal = $state(false);
 
@@ -49,6 +52,12 @@ class UiStore {
   alterTableContext = $state<AlterTableContext | null>(null);
   showIndexModal = $state(false);
   indexModalContext = $state<IndexModalContext | null>(null);
+
+  dismissHome() {
+    if (!this.showHome) return;
+    this.showHome = false;
+    this.sidebarCollapsed = false;
+  }
 
   openConnectionModal() {
     this.showConnectionModal = true;

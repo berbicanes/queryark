@@ -1,7 +1,9 @@
 <script lang="ts">
   import { connectionStore } from '$lib/stores/connections.svelte';
+  import { uiStore } from '$lib/stores/ui.svelte';
+  import * as connectionService from '$lib/services/connectionService';
   import { DB_METADATA } from '$lib/types/database';
-  import type { DatabaseType } from '$lib/types/connection';
+  import type { DatabaseType, ConnectionState } from '$lib/types/connection';
 
   let { onAddConnection }: { onAddConnection: () => void } = $props();
 
@@ -12,19 +14,39 @@
   ];
 
   let hasConnections = $derived(connectionStore.connections.length > 0);
+
+  // Grouped connections for dashboard
+  let groups = $derived(connectionStore.groups);
+  let ungrouped = $derived(connectionStore.getConnectionsByGroup(null));
+
+  function handleCardClick(conn: ConnectionState) {
+    connectionStore.setActive(conn.config.id);
+    if (conn.status !== 'connected') {
+      connectionService.connect(conn.config);
+    }
+    uiStore.dismissHome();
+  }
+
+  function handleCardDblClick(conn: ConnectionState) {
+    connectionStore.setActive(conn.config.id);
+    if (conn.status !== 'connected') {
+      connectionService.connect(conn.config);
+    }
+    uiStore.dismissHome();
+  }
 </script>
 
 <div class="welcome-screen">
   {#if !hasConnections}
     <div class="welcome-hero">
       <div class="logo-icon">
-        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-          <rect x="4" y="8" width="40" height="8" rx="4" stroke="var(--accent)" stroke-width="2.5"/>
-          <rect x="4" y="20" width="40" height="8" rx="4" stroke="var(--accent)" stroke-width="2.5"/>
-          <rect x="4" y="32" width="40" height="8" rx="4" stroke="var(--accent)" stroke-width="2.5"/>
-          <circle cx="10" cy="12" r="1.5" fill="var(--accent)"/>
-          <circle cx="10" cy="24" r="1.5" fill="var(--accent)"/>
-          <circle cx="10" cy="36" r="1.5" fill="var(--accent)"/>
+        <svg width="64" height="64" viewBox="0 0 48 48" fill="none">
+          <rect x="4" y="8" width="40" height="8" rx="4" stroke="var(--accent)" stroke-width="2.5" fill="rgba(122, 162, 247, 0.1)"/>
+          <rect x="4" y="20" width="40" height="8" rx="4" stroke="var(--accent)" stroke-width="2.5" fill="rgba(122, 162, 247, 0.07)"/>
+          <rect x="4" y="32" width="40" height="8" rx="4" stroke="var(--accent)" stroke-width="2.5" fill="rgba(122, 162, 247, 0.04)"/>
+          <circle cx="10" cy="12" r="2" fill="var(--accent)"/>
+          <circle cx="10" cy="24" r="2" fill="var(--accent)"/>
+          <circle cx="10" cy="36" r="2" fill="var(--accent)"/>
         </svg>
       </div>
       <h1 class="welcome-title">Welcome to DataForge</h1>
@@ -45,15 +67,107 @@
       </div>
     </div>
   {:else}
-    <div class="empty-hero">
-      <div class="empty-icon">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/>
-          <polyline points="13 2 13 9 20 9"/>
-        </svg>
+    <div class="dashboard">
+      <div class="dashboard-header">
+        <div class="dashboard-brand">
+          <svg width="32" height="32" viewBox="0 0 48 48" fill="none">
+            <rect x="4" y="8" width="40" height="8" rx="4" stroke="var(--accent)" stroke-width="2.5" fill="rgba(122, 162, 247, 0.1)"/>
+            <rect x="4" y="20" width="40" height="8" rx="4" stroke="var(--accent)" stroke-width="2.5" fill="rgba(122, 162, 247, 0.07)"/>
+            <rect x="4" y="32" width="40" height="8" rx="4" stroke="var(--accent)" stroke-width="2.5" fill="rgba(122, 162, 247, 0.04)"/>
+            <circle cx="10" cy="12" r="2" fill="var(--accent)"/>
+            <circle cx="10" cy="24" r="2" fill="var(--accent)"/>
+            <circle cx="10" cy="36" r="2" fill="var(--accent)"/>
+          </svg>
+          <span class="dashboard-title">DataForge</span>
+          <span class="dashboard-subtitle">Your Connections</span>
+        </div>
       </div>
-      <p class="empty-message">No tabs open</p>
-      <p class="empty-hint">Select a table from the sidebar or open a new query tab</p>
+
+      <div class="cards-area">
+        {#if ungrouped.length > 0}
+          <div class="cards-grid">
+            {#each ungrouped as conn}
+              {@const meta = DB_METADATA[conn.config.db_type]}
+              <button
+                class="conn-card"
+                style={conn.config.color ? `--card-accent: ${conn.config.color}` : ''}
+                onclick={() => handleCardClick(conn)}
+                ondblclick={() => handleCardDblClick(conn)}
+              >
+                {#if conn.config.color}
+                  <span class="card-stripe" style="background: {conn.config.color}"></span>
+                {/if}
+                <div class="card-top">
+                  <span class="badge {meta.badgeClass}">{meta.badge}</span>
+                  <span class="status-dot {conn.status}"></span>
+                </div>
+                <div class="card-name">{conn.config.name}</div>
+                <div class="card-host">
+                  {#if meta.requiresHost}
+                    {conn.config.host || 'localhost'}{conn.config.port ? `:${conn.config.port}` : ''}
+                  {:else if meta.requiresFilePath}
+                    {conn.config.database || 'local'}
+                  {:else}
+                    {conn.config.database || meta.label}
+                  {/if}
+                </div>
+              </button>
+            {/each}
+
+            <button class="conn-card add-card" onclick={onAddConnection}>
+              <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+                <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <span>Add Connection</span>
+            </button>
+          </div>
+        {/if}
+
+        {#each groups as group}
+          {@const groupConns = connectionStore.getConnectionsByGroup(group)}
+          <div class="group-label">{group}</div>
+          <div class="cards-grid">
+            {#each groupConns as conn}
+              {@const meta = DB_METADATA[conn.config.db_type]}
+              <button
+                class="conn-card"
+                style={conn.config.color ? `--card-accent: ${conn.config.color}` : ''}
+                onclick={() => handleCardClick(conn)}
+                ondblclick={() => handleCardDblClick(conn)}
+              >
+                {#if conn.config.color}
+                  <span class="card-stripe" style="background: {conn.config.color}"></span>
+                {/if}
+                <div class="card-top">
+                  <span class="badge {meta.badgeClass}">{meta.badge}</span>
+                  <span class="status-dot {conn.status}"></span>
+                </div>
+                <div class="card-name">{conn.config.name}</div>
+                <div class="card-host">
+                  {#if meta.requiresHost}
+                    {conn.config.host || 'localhost'}{conn.config.port ? `:${conn.config.port}` : ''}
+                  {:else if meta.requiresFilePath}
+                    {conn.config.database || 'local'}
+                  {:else}
+                    {conn.config.database || meta.label}
+                  {/if}
+                </div>
+              </button>
+            {/each}
+          </div>
+        {/each}
+
+        {#if ungrouped.length === 0}
+          <div class="cards-grid">
+            <button class="conn-card add-card" onclick={onAddConnection}>
+              <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+                <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+              <span>Add Connection</span>
+            </button>
+          </div>
+        {/if}
+      </div>
     </div>
   {/if}
 
@@ -75,31 +189,34 @@
     height: 100%;
     gap: 8px;
     user-select: none;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 40%, rgba(122, 162, 247, 0.06) 0%, transparent 70%),
+      var(--bg-primary);
   }
 
-  .welcome-hero,
-  .empty-hero {
+  .welcome-hero {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
   }
 
   .logo-icon {
-    opacity: 0.8;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 0 12px rgba(122, 162, 247, 0.3));
   }
 
   .welcome-title {
-    font-size: 22px;
-    font-weight: 700;
+    font-size: 28px;
+    font-weight: 800;
     color: var(--text-primary);
     margin: 0;
+    letter-spacing: -0.5px;
   }
 
   .welcome-subtitle {
-    font-size: 14px;
-    color: var(--text-muted);
+    font-size: 15px;
+    color: var(--text-secondary);
     margin: 0;
   }
 
@@ -107,21 +224,23 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 24px;
-    margin-top: 8px;
-    font-size: 13px;
+    padding: 12px 28px;
+    margin-top: 12px;
+    font-size: 14px;
     font-weight: 600;
     font-family: var(--font-sans);
-    color: var(--bg-primary);
+    color: #fff;
     background: var(--accent);
     border: none;
     border-radius: var(--radius-md);
     cursor: pointer;
-    transition: opacity var(--transition-fast);
+    transition: box-shadow var(--transition-subtle, 150ms ease), transform var(--transition-subtle, 150ms ease);
+    box-shadow: 0 2px 8px rgba(122, 162, 247, 0.25);
   }
 
   .cta-btn:hover {
-    opacity: 0.9;
+    box-shadow: 0 4px 20px rgba(122, 162, 247, 0.45);
+    transform: translateY(-2px);
   }
 
   .db-badges {
@@ -129,37 +248,182 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: 6px;
-    max-width: 400px;
-    margin-top: 16px;
-    opacity: 0.7;
+    max-width: 420px;
+    margin-top: 20px;
   }
 
-  .empty-icon {
-    opacity: 0.3;
-    margin-bottom: 4px;
+  /* Dashboard — shown when connections exist */
+  .dashboard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 840px;
+    gap: 28px;
+    padding-top: 24px;
   }
 
-  .empty-message {
-    font-size: 14px;
-    color: var(--text-muted);
-    margin: 0;
+  .dashboard-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
 
-  .empty-hint {
+  .dashboard-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .dashboard-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+  }
+
+  .dashboard-subtitle {
     font-size: 12px;
-    color: var(--text-muted);
-    opacity: 0.7;
-    margin: 0;
+    font-weight: 500;
+    color: var(--text-secondary);
+    border-left: 1px solid var(--border-color);
+    padding-left: 12px;
+    margin-left: 4px;
+  }
+
+  .cards-area {
+    width: 100%;
+    padding: 0 32px;
+  }
+
+  .group-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-secondary);
+    padding: 16px 0 8px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 12px;
+  }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 12px;
+  }
+
+  .conn-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px 18px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    text-align: left;
+    transition: transform var(--transition-subtle, 150ms ease), box-shadow var(--transition-subtle, 150ms ease), border-color var(--transition-subtle, 150ms ease);
+    position: relative;
+    overflow: hidden;
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    font-size: 13px;
+  }
+
+  .conn-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--card-accent, var(--accent));
+    border-color: var(--card-accent, var(--accent));
+  }
+
+  .card-stripe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+  }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    opacity: 0.4;
+    flex-shrink: 0;
+  }
+
+  .status-dot.connected {
+    background: var(--success);
+    opacity: 1;
+    box-shadow: 0 0 6px rgba(166, 227, 161, 0.5);
+  }
+
+  .status-dot.connecting {
+    background: var(--warning);
+    opacity: 1;
+  }
+
+  .status-dot.error {
+    background: var(--error);
+    opacity: 1;
+  }
+
+  .card-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .card-host {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .add-card {
+    border-style: dashed;
+    border-width: 2px;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    background: transparent;
+    gap: 8px;
+    min-height: 100px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .add-card:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: rgba(122, 162, 247, 0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(122, 162, 247, 0.15);
   }
 
   .shortcuts-hint {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 24px;
+    margin-top: 32px;
     font-size: 11px;
-    color: var(--text-muted);
-    opacity: 0.6;
+    color: var(--text-secondary);
+    opacity: 0.7;
   }
 
   .sep {

@@ -87,7 +87,7 @@
   }
 
   .grid-row.odd {
-    background: rgba(42, 42, 60, 0.3);
+    background: var(--overlay-light, rgba(255, 255, 255, 0.03));
   }
 
   .grid-row:hover {
@@ -95,11 +95,11 @@
   }
 
   .grid-row.selected {
-    background: rgba(137, 180, 250, 0.1) !important;
+    background: rgba(122, 162, 247, 0.08) !important;
   }
 
   .grid-row.selected:hover {
-    background: rgba(137, 180, 250, 0.15) !important;
+    background: rgba(122, 162, 247, 0.12) !important;
   }
 
   .grid-row.deleted {
@@ -114,12 +114,13 @@
     justify-content: center;
     min-width: 50px;
     max-width: 50px;
-    font-size: 10px;
+    font-size: 9px;
     color: var(--text-muted);
     font-family: var(--font-mono);
     border-right: 1px solid var(--border-color);
     user-select: none;
     flex-shrink: 0;
+    opacity: 0.6;
   }
 
   .checkbox-cell {
