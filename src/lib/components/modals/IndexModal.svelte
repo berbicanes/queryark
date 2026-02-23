@@ -116,12 +116,10 @@
       {#if activeTab === 'create'}
         <div class="form-section">
           <div class="form-row">
-            <label>Index Name</label>
-            <input type="text" class="form-input" bind:value={indexName} placeholder="idx_table_column" />
+            <label>Index Name <input type="text" class="form-input" bind:value={indexName} placeholder="idx_table_column" /></label>
           </div>
           <div class="form-row">
-            <label>Unique</label>
-            <input type="checkbox" bind:checked={isUnique} />
+            <label>Unique <input type="checkbox" bind:checked={isUnique} /></label>
           </div>
           <div class="column-picker">
             <span class="picker-label">Columns (select in order):</span>
@@ -150,15 +148,14 @@
             <p class="no-indexes">No indexes found on this table.</p>
           {:else}
             <div class="form-row">
-              <label>Index</label>
-              <select class="form-input" bind:value={dropIndexName}>
+              <label>Index <select class="form-input" bind:value={dropIndexName}>
                 <option value="">-- Select index --</option>
                 {#each existingIndexes as idx}
                   <option value={idx.name}>
                     {idx.name} ({idx.columns.join(', ')}) {idx.is_unique ? '[unique]' : ''} {idx.is_primary ? '[PK]' : ''}
                   </option>
                 {/each}
-              </select>
+              </select></label>
             </div>
           {/if}
           {#if dropDdl}

@@ -449,8 +449,8 @@
       </div>
 
       <div class="form-group">
-        <label>Color (optional)</label>
-        <div class="color-palette">
+        <span>Color (optional)</span>
+        <div class="color-palette" role="group" aria-label="Connection color">
           <button
             class="color-swatch no-color"
             class:selected={!color}

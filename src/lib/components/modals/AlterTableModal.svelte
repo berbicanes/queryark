@@ -120,24 +120,20 @@
       {#if activeTab === 'add'}
         <div class="form-section">
           <div class="form-row">
-            <label>Name</label>
-            <input type="text" class="form-input" bind:value={newColumn.name} placeholder="column_name" />
+            <label>Name <input type="text" class="form-input" bind:value={newColumn.name} placeholder="column_name" /></label>
           </div>
           <div class="form-row">
-            <label>Type</label>
-            <select class="form-input" bind:value={newColumn.dataType}>
+            <label>Type <select class="form-input" bind:value={newColumn.dataType}>
               {#each dataTypes as dt}
                 <option value={dt}>{dt}</option>
               {/each}
-            </select>
+            </select></label>
           </div>
           <div class="form-row">
-            <label>Nullable</label>
-            <input type="checkbox" bind:checked={newColumn.nullable} />
+            <label>Nullable <input type="checkbox" bind:checked={newColumn.nullable} /></label>
           </div>
           <div class="form-row">
-            <label>Default</label>
-            <input type="text" class="form-input" bind:value={newColumn.defaultValue} placeholder="optional" />
+            <label>Default <input type="text" class="form-input" bind:value={newColumn.defaultValue} placeholder="optional" /></label>
           </div>
           {#if addDdl}
             <pre class="ddl-preview">{addDdl}</pre>
@@ -146,13 +142,12 @@
       {:else}
         <div class="form-section">
           <div class="form-row">
-            <label>Column</label>
-            <select class="form-input" bind:value={dropColumnName}>
+            <label>Column <select class="form-input" bind:value={dropColumnName}>
               <option value="">-- Select column --</option>
               {#each existingColumns as col}
                 <option value={col.name}>{col.name} ({col.data_type})</option>
               {/each}
-            </select>
+            </select></label>
           </div>
           {#if dropDdl}
             <pre class="ddl-preview">{dropDdl}</pre>

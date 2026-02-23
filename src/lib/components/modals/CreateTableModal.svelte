@@ -82,12 +82,10 @@
 
     <div class="modal-body">
       <div class="form-row">
-        <label>Schema</label>
-        <input type="text" class="form-input" value={ctx?.schema ?? ''} disabled />
+        <label>Schema <input type="text" class="form-input" value={ctx?.schema ?? ''} disabled /></label>
       </div>
       <div class="form-row">
-        <label>Table Name</label>
-        <input type="text" class="form-input" bind:value={tableName} placeholder="new_table" />
+        <label>Table Name <input type="text" class="form-input" bind:value={tableName} placeholder="new_table" /></label>
       </div>
 
       <div class="columns-section">
