@@ -1,5 +1,5 @@
 import type { DatabaseType } from '$lib/types/connection';
-import type { QuerySnippet } from '$lib/types/query';
+import type { QuerySnippet, CellValue, ColumnDef } from '$lib/types/query';
 
 export interface CreateTableContext {
   connectionId: string;
@@ -62,6 +62,12 @@ class UiStore {
   snippetToInsert = $state<QuerySnippet | null>(null);
   showWorkspaceModal = $state(false);
   showBookmarkList = $state(false);
+
+  // Phase 22 — Advanced Query Features
+  showParameterPrompt = $state(false);
+  parameterPromptSql = $state('');
+  parameterPromptCallback = $state<((sql: string) => void) | null>(null);
+  comparisonBuffer = $state<{ columns: ColumnDef[]; rows: CellValue[][]; sql: string } | null>(null);
 
   dismissHome() {
     if (!this.showHome) return;

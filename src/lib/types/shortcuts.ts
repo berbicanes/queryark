@@ -25,6 +25,8 @@ export const DEFAULT_SHORTCUTS: ShortcutAction[] = [
   { id: 'openSnippets', label: 'Query Snippets', category: 'General', defaultKey: '' },
   { id: 'openWorkspaces', label: 'Workspace Profiles', category: 'General', defaultKey: '' },
   { id: 'openBookmarks', label: 'Result Bookmarks', category: 'General', defaultKey: '' },
+  { id: 'toggleChart', label: 'Toggle Chart View', category: 'Query', defaultKey: '' },
+  { id: 'compareResults', label: 'Compare Results', category: 'Query', defaultKey: '' },
 ];
 
 export type ShortcutId = typeof DEFAULT_SHORTCUTS[number]['id'];

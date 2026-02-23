@@ -35,6 +35,7 @@
   import SnippetVariablePrompt from '$lib/components/modals/SnippetVariablePrompt.svelte';
   import BookmarkList from '$lib/components/modals/BookmarkList.svelte';
   import WorkspaceModal from '$lib/components/modals/WorkspaceModal.svelte';
+  import ParameterPrompt from '$lib/components/modals/ParameterPrompt.svelte';
 
   let lastExecutionTime = $state<number | null>(null);
   let lastRowCount = $state<number | null>(null);
@@ -335,6 +336,10 @@
 
 {#if uiStore.showWorkspaceModal}
   <WorkspaceModal />
+{/if}
+
+{#if uiStore.showParameterPrompt}
+  <ParameterPrompt />
 {/if}
 
 {#if uiStore.errorMessage}

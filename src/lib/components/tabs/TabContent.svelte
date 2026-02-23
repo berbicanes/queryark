@@ -10,6 +10,7 @@
   import DataDiffTab from './DataDiffTab.svelte';
   import VisualQueryTab from './VisualQueryTab.svelte';
   import BookmarkViewerTab from './BookmarkViewerTab.svelte';
+  import ResultCompareTab from './ResultCompareTab.svelte';
 
   let { onqueryresult, paneId }: {
     onqueryresult?: (detail: { executionTime: number; rowCount: number }) => void;
@@ -69,6 +70,10 @@
   {:else if activeTab.type === 'bookmark'}
     {#key activeTab.id}
       <BookmarkViewerTab tab={activeTab} />
+    {/key}
+  {:else if activeTab.type === 'resultcompare'}
+    {#key activeTab.id}
+      <ResultCompareTab tab={activeTab} />
     {/key}
   {/if}
 </div>

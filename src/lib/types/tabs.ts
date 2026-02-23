@@ -1,5 +1,5 @@
 export type TabType = 'query' | 'table' | 'document' | 'keyvalue' | 'graph'
-  | 'diagram' | 'tablediff' | 'datadiff' | 'visualquery' | 'bookmark';
+  | 'diagram' | 'tablediff' | 'datadiff' | 'visualquery' | 'bookmark' | 'resultcompare';
 
 export interface Tab {
   id: string;
@@ -22,4 +22,7 @@ export interface Tab {
   diffTargetTable?: string;
   // Phase 21: Bookmarks
   bookmarkId?: string;
+  // Phase 22: Result comparison
+  compareSourceResult?: { columns: import('./query').ColumnDef[]; rows: import('./query').CellValue[][]; sql: string };
+  compareTargetResult?: { columns: import('./query').ColumnDef[]; rows: import('./query').CellValue[][]; sql: string };
 }

@@ -93,3 +93,17 @@ export interface ResultBookmark {
   executionTimeMs: number;
   createdAt: number;
 }
+
+export interface ParameterInfo {
+  name: string;
+  style: 'positional' | 'named' | 'numbered';
+  index: number;
+  defaultValue: string;
+}
+
+export interface IndexSuggestion {
+  table: string;
+  columns: string[];
+  reason: string;
+  sql: string;
+}

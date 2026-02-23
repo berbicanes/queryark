@@ -22,7 +22,12 @@
   import ExportMenu from '$lib/components/grid/ExportMenu.svelte';
   import QueryHistory from '$lib/components/editor/QueryHistory.svelte';
   import SavedQueries from '$lib/components/editor/SavedQueries.svelte';
-  import QueryPlanViewer from '$lib/components/editor/QueryPlanViewer.svelte';
+  import QueryProfiler from '$lib/components/editor/QueryProfiler.svelte';
+  import ChartPanel from '$lib/components/chart/ChartPanel.svelte';
+  import IndexSuggestions from '$lib/components/editor/IndexSuggestions.svelte';
+  import { detectParameters } from '$lib/utils/parameterParser';
+  import { analyzeQueryForIndexes } from '$lib/utils/indexAnalyzer';
+  import type { IndexSuggestion } from '$lib/types/query';
 
   let { tab, onqueryresult }: {
     tab: Tab;
@@ -52,6 +57,12 @@
   // Explain / query plan
   let showPlan = $state(false);
   let planResult = $state<QueryResponse | null>(null);
+
+  // Phase 22: Result view mode (grid vs chart)
+  let resultView = $state<'grid' | 'chart'>('grid');
+
+  // Phase 22: Index suggestions
+  let indexSuggestions = $state<IndexSuggestion[]>([]);
 
   // Client-side sorting per result set
   let sortColumnsMap = $state<Record<number, SortColumn[]>>({});
@@ -191,6 +202,18 @@
     if (isExecuting) return;
     if (!sqlValue.trim()) return;
 
+    // Phase 22: Detect parameters and prompt if found
+    const params = detectParameters(sqlValue);
+    if (params.length > 0) {
+      uiStore.parameterPromptSql = sqlValue;
+      uiStore.parameterPromptCallback = (substitutedSql: string) => {
+        sqlValue = substitutedSql;
+        doExecuteQueryDirect();
+      };
+      uiStore.showParameterPrompt = true;
+      return;
+    }
+
     // Check for destructive SQL and confirm if needed
     if (settingsStore.confirmBeforeDelete && DESTRUCTIVE_SQL_PATTERN.test(sqlValue)) {
       return new Promise<void>((resolve) => {
@@ -201,6 +224,19 @@
       });
     }
 
+    return doExecuteQuery();
+  }
+
+  /** Execute without parameter check (called after substitution or directly). */
+  async function doExecuteQueryDirect() {
+    if (settingsStore.confirmBeforeDelete && DESTRUCTIVE_SQL_PATTERN.test(sqlValue)) {
+      return new Promise<void>((resolve) => {
+        uiStore.confirm(
+          'This query contains a destructive operation (DROP, TRUNCATE, or DELETE). Execute anyway?',
+          () => { doExecuteQuery(); resolve(); }
+        );
+      });
+    }
     return doExecuteQuery();
   }
 
@@ -320,6 +356,19 @@
           schemaService.refreshSchema(connId);
         } else {
           schemaService.refreshContainers(connId);
+        }
+      }
+    }
+
+    // Phase 22: Auto-suggest indexes for slow queries (>500ms)
+    indexSuggestions = [];
+    if (!errorMessage && results.length > 0) {
+      const totalTime = results.reduce((s, r) => s + r.execution_time_ms, 0);
+      if (totalTime > 500) {
+        try {
+          indexSuggestions = analyzeQueryForIndexes(sqlValue, dialect);
+        } catch {
+          // Non-critical — silently skip
         }
       }
     }
@@ -540,12 +589,53 @@
     if (showSaved) showHistory = false;
   }
 
+  function handleCompare() {
+    if (results.length === 0) return;
+    const currentResult = {
+      columns: results[0].columns,
+      rows: results[0].rows,
+      sql: sqlValue,
+    };
+
+    if (uiStore.comparisonBuffer) {
+      // Second click — open comparison tab
+      tabStore.openTab({
+        type: 'resultcompare',
+        title: 'Result Compare',
+        connectionId: tab.connectionId,
+        compareSourceResult: uiStore.comparisonBuffer,
+        compareTargetResult: currentResult,
+      });
+      uiStore.comparisonBuffer = null;
+    } else {
+      // First click — buffer result
+      uiStore.comparisonBuffer = currentResult;
+      uiStore.showSuccess('Result buffered. Click Compare in another tab to compare.');
+    }
+  }
+
+  function handleToggleChart() {
+    if (tabStore.activeTabId === tab.id) {
+      resultView = resultView === 'grid' ? 'chart' : 'grid';
+    }
+  }
+
+  function handleGlobalCompare() {
+    if (tabStore.activeTabId === tab.id && results.length > 0) {
+      handleCompare();
+    }
+  }
+
   onMount(() => {
     window.addEventListener('queryark:execute-query', handleGlobalExecute);
+    window.addEventListener('queryark:toggle-chart', handleToggleChart);
+    window.addEventListener('queryark:compare-results', handleGlobalCompare);
   });
 
   onDestroy(() => {
     window.removeEventListener('queryark:execute-query', handleGlobalExecute);
+    window.removeEventListener('queryark:toggle-chart', handleToggleChart);
+    window.removeEventListener('queryark:compare-results', handleGlobalCompare);
   });
 </script>
 
@@ -654,6 +744,44 @@
     </div>
     <div class="toolbar-right">
       {#if results.length > 0}
+        <!-- Phase 22: Grid/Chart toggle -->
+        <div class="view-toggles">
+          <button
+            class="view-btn"
+            class:active={resultView === 'grid'}
+            onclick={() => resultView = 'grid'}
+            title="Grid View"
+          >
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="1" y="1" width="6" height="6" rx="0.5" /><rect x="9" y="1" width="6" height="6" rx="0.5" />
+              <rect x="1" y="9" width="6" height="6" rx="0.5" /><rect x="9" y="9" width="6" height="6" rx="0.5" />
+            </svg>
+          </button>
+          <button
+            class="view-btn"
+            class:active={resultView === 'chart'}
+            onclick={() => resultView = 'chart'}
+            title="Chart View"
+          >
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="1" y="8" width="3" height="7" rx="0.5" /><rect x="6" y="4" width="3" height="11" rx="0.5" /><rect x="11" y="1" width="3" height="14" rx="0.5" />
+            </svg>
+          </button>
+        </div>
+        <div class="toolbar-separator"></div>
+        <!-- Phase 22: Compare button -->
+        <button
+          class="toolbar-btn"
+          class:buffered={uiStore.comparisonBuffer !== null}
+          onclick={handleCompare}
+          title={uiStore.comparisonBuffer ? 'Compare with buffered result' : 'Buffer result for comparison'}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="8" height="18" rx="1" /><rect x="14" y="3" width="8" height="18" rx="1" />
+          </svg>
+          <span>Compare</span>
+        </button>
+        <div class="toolbar-separator"></div>
         <ExportMenu
           columns={results[0].columns}
           rows={results[0].rows}
@@ -730,63 +858,73 @@
       </div>
     {:else if results.length > 0}
       <div class="results-container">
-        {#each results as result, i (i)}
-          {#if results.length > 1}
-            <div class="result-label">
-              <span>Statement {i + 1}</span>
-              <span class="result-meta">{result.row_count} rows, {result.execution_time_ms}ms</span>
+        {#if resultView === 'chart'}
+          <!-- Phase 22: Chart view -->
+          <ChartPanel
+            columns={results[0].columns}
+            rows={results[0].rows}
+          />
+        {:else}
+          {#each results as result, i (i)}
+            {#if results.length > 1}
+              <div class="result-label">
+                <span>Statement {i + 1}</span>
+                <span class="result-meta">{result.row_count} rows, {result.execution_time_ms}ms</span>
+              </div>
+            {/if}
+            {#if serverPaginated[i]}
+              <div class="server-pagination-info">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                Server-paginated — {totalRowCounts[i] != null ? `${totalRowCounts[i]!.toLocaleString()} total rows` : 'counting rows...'}
+                {#if pageLoading[i]}
+                  <span class="page-spinner"></span>
+                {/if}
+              </div>
+            {:else if result.truncated}
+              <div class="truncation-warning">
+                Results limited to {result.max_rows_limit?.toLocaleString()} rows. Full result set may be larger.
+              </div>
+            {/if}
+            <div class="result-grid" class:multi={results.length > 1}>
+              <DataGrid
+                columns={result.columns}
+                rows={getPaginatedRows(i)}
+                sortColumns={sortColumnsMap[i] ?? []}
+                onSort={(sorts) => handleSort(i, sorts)}
+                onExpandCell={(rowIndex, colIndex) => handleExpandCell(i, rowIndex, colIndex)}
+              />
             </div>
-          {/if}
-          {#if serverPaginated[i]}
-            <div class="server-pagination-info">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="16" x2="12" y2="12"></line>
-                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-              </svg>
-              Server-paginated — {totalRowCounts[i] != null ? `${totalRowCounts[i]!.toLocaleString()} total rows` : 'counting rows...'}
-              {#if pageLoading[i]}
-                <span class="page-spinner"></span>
-              {/if}
-            </div>
-          {:else if result.truncated}
-            <div class="truncation-warning">
-              Results limited to {result.max_rows_limit?.toLocaleString()} rows. Full result set may be larger.
-            </div>
-          {/if}
-          <div class="result-grid" class:multi={results.length > 1}>
-            <DataGrid
-              columns={result.columns}
-              rows={getPaginatedRows(i)}
-              sortColumns={sortColumnsMap[i] ?? []}
-              onSort={(sorts) => handleSort(i, sorts)}
-              onExpandCell={(rowIndex, colIndex) => handleExpandCell(i, rowIndex, colIndex)}
-            />
-          </div>
-          {#if getTotalRows(i) > 0}
-            <Pagination
-              currentPage={getPagination(i).page}
-              totalRows={getTotalRows(i)}
-              pageSize={getPagination(i).pageSize}
-              onPageChange={(page) => handlePageChange(i, page)}
-              onPageSizeChange={(size) => handlePageSizeChange(i, size)}
-            />
-          {/if}
-        {/each}
+            {#if getTotalRows(i) > 0}
+              <Pagination
+                currentPage={getPagination(i).page}
+                totalRows={getTotalRows(i)}
+                pageSize={getPagination(i).pageSize}
+                onPageChange={(page) => handlePageChange(i, page)}
+                onPageSizeChange={(size) => handlePageSizeChange(i, size)}
+              />
+            {/if}
+          {/each}
+        {/if}
         {#if errorMessage}
           <div class="error-state partial">
             <span class="error-icon">!</span>
             <span>{errorMessage}</span>
           </div>
         {/if}
+        <!-- Phase 22: Index suggestions -->
+        <IndexSuggestions suggestions={indexSuggestions} connectionId={tab.connectionId} />
       </div>
     {:else if showPlan && planResult}
       <div class="plan-container">
         <div class="plan-header">
-          <span>Query Plan</span>
+          <span>Query Profiler</span>
           <button class="toolbar-btn" onclick={() => { showPlan = false; planResult = null; }}>Close</button>
         </div>
-        <QueryPlanViewer planData={planResult} {dialect} />
+        <QueryProfiler planData={planResult} {dialect} />
       </div>
     {:else}
       <div class="empty-state">
@@ -1130,5 +1268,39 @@
 
   .cancel-btn:hover {
     background: rgba(243, 139, 168, 0.15);
+  }
+
+  /* Phase 22: View toggles */
+  .view-toggles {
+    display: flex;
+    gap: 1px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .view-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 6px;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+
+  .view-btn:hover {
+    background: var(--bg-hover);
+  }
+
+  .view-btn.active {
+    background: var(--bg-active);
+    color: var(--accent);
+  }
+
+  .toolbar-btn.buffered {
+    color: var(--accent) !important;
+    background: rgba(122, 162, 247, 0.1);
   }
 </style>

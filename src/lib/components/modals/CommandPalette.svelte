@@ -178,6 +178,12 @@
       openSnippets: () => { uiStore.showSnippetLibrary = true; },
       openWorkspaces: () => { uiStore.showWorkspaceModal = true; },
       openBookmarks: () => { uiStore.showBookmarkList = true; },
+      toggleChart: () => {
+        window.dispatchEvent(new CustomEvent('queryark:toggle-chart'));
+      },
+      compareResults: () => {
+        window.dispatchEvent(new CustomEvent('queryark:compare-results'));
+      },
     };
     for (const shortcut of DEFAULT_SHORTCUTS) {
       if (actionMap[shortcut.id]) {

@@ -40,7 +40,9 @@ src/                          # Frontend (SvelteKit)
 │   │   ├── structure/        # TableStructure, ColumnsView, IndexesView, ForeignKeysView
 │   │   ├── tabs/             # TabBar, TabContent, QueryTab, TableTab,
 │   │   │                     # DocumentTab, KeyValueTab, GraphTab,
-│   │   │                     # DiagramTab, TableDiffTab, DataDiffTab, VisualQueryTab
+│   │   │                     # DiagramTab, TableDiffTab, DataDiffTab, VisualQueryTab,
+│   │   │                     # ResultCompareTab, BookmarkViewerTab
+│   │   ├── chart/            # ChartPanel, BarChart, LineChart, PieChart (SVG)
 │   │   ├── diagram/          # ERDiagramCanvas, DiagramToolbar, DiagramMinimap
 │   │   ├── diff/             # DiffConnectionPicker, ColumnsDiff, IndexesDiff,
 │   │   │                     # ForeignKeysDiff, DataDiffGrid
@@ -64,7 +66,7 @@ src/                          # Frontend (SvelteKit)
 │   │   ├── database.ts       # DB_METADATA constant, DB_GROUPS
 │   │   ├── query.ts          # QueryResponse, CellValue, ColumnDef
 │   │   ├── schema.ts         # SQL-specific + generic (ContainerInfo, ItemInfo, FieldInfo)
-│   │   ├── tabs.ts           # TabType: query | table | document | keyvalue | graph | diagram | tablediff | datadiff | visualquery
+│   │   ├── tabs.ts           # TabType: query | table | document | keyvalue | graph | diagram | tablediff | datadiff | visualquery | bookmark | resultcompare
 │   │   ├── diagram.ts        # DiagramTable, DiagramColumn, DiagramRelationship
 │   │   ├── diff.ts           # ColumnDiff, IndexDiff, ForeignKeyDiff, TableDiffResult, DataDiffResult
 │   │   └── visualQuery.ts    # VQTable, VQJoin, VQWhereClause, VQState
@@ -216,6 +218,11 @@ npm run check            # TypeScript/Svelte type checking
 - Query snippets library — create/edit/delete parameterized SQL templates with `{{variable}}` substitution, tags, search, variable auto-detection, insert into editor with variable prompt
 - Query result bookmarks — save query results (columns + rows + SQL) with name, view in dedicated read-only tab, re-run original query, max 50 bookmarks
 - Workspace profiles — save/restore complete workspace state (open tabs, active connection, sidebar width/collapsed), rename, update (overwrite), delete
+- Parameterized query execution — auto-detect $1, :name, ? parameters in SQL, prompt modal with session-level value memory, substitute and execute
+- Query result charts — bar, line, pie chart visualization of query results using custom SVG, configurable X/Y axis columns, grid/legend toggles, export to SVG
+- Side-by-side result comparison — buffer a result, then compare with another query's result in a dedicated tab, positional or key-based row matching, filter by status
+- Query profiling dashboard — enhanced EXPLAIN ANALYZE viewer with tree, timeline, optimization hints, and raw views, execution stats summary
+- Auto-suggest indexes — analyze slow queries (>500ms) for WHERE/JOIN/ORDER BY/GROUP BY columns, generate CREATE INDEX DDL, open in query tab
 
 ### Stub databases (feature-gated, not yet functional):
 - Oracle (`cargo build --features oracle` — requires Oracle Instant Client)
@@ -393,12 +400,12 @@ Separate repository — SvelteKit static site deployed to Vercel/Netlify/Cloudfl
 - [x] **Query result bookmarks**: Save result snapshots with name and timestamp, view in dedicated tab, re-run query
 - [x] **Workspace profiles**: Save and restore layout + open tabs + connection + sidebar state per project
 
-### Phase 22: Advanced Query Features
-- [ ] **Query result charts**: Generate bar, line, pie charts from SELECT result sets
-- [ ] **Side-by-side result comparison**: Compare two query results in split view with diff highlighting
-- [ ] **Parameterized query execution**: Prompt for variable inputs ($1, :name) before running queries
-- [ ] **Query profiling dashboard**: Execution time breakdown, index usage hints, optimization suggestions
-- [ ] **Auto-suggest indexes**: Analyze slow queries and recommend index creation
+### Phase 22: Advanced Query Features ✅
+- [x] **Query result charts**: Generate bar, line, pie charts from SELECT result sets using custom SVG, with configurable X/Y columns, grid/legend toggles, export to SVG
+- [x] **Side-by-side result comparison**: Compare two query results with diff highlighting, positional or key-based matching, filter by status (identical/changed/source-only/target-only)
+- [x] **Parameterized query execution**: Auto-detect $1/:name/? parameters in SQL, prompt modal with session-level value memory, substitution and execution
+- [x] **Query profiling dashboard**: Enhanced EXPLAIN viewer with tree/timeline/hints/raw views, execution stats summary, rule-based optimization hints (seq scan, join, sort, row estimate drift)
+- [x] **Auto-suggest indexes**: Analyze slow queries (>500ms) for WHERE/JOIN/ORDER BY/GROUP BY columns, generate dialect-aware CREATE INDEX DDL, open in query tab or copy
 
 ### Phase 23: Quality & Trust
 - [ ] **End-to-end test suite**: Playwright tests against Docker-based test databases (PostgreSQL, MySQL, SQLite, MongoDB, Redis)
