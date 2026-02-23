@@ -23,7 +23,7 @@
   }
 
   function handleRun() {
-    window.dispatchEvent(new CustomEvent('dataforge:execute-query'));
+    window.dispatchEvent(new CustomEvent('queryark:execute-query'));
   }
 
   function selectConnection(id: string) {
@@ -46,7 +46,7 @@
 
 <div class="toolbar">
   <div class="toolbar-left">
-    <span class="branding">DataForge</span>
+    <span class="branding">QueryArk</span>
 
     <div class="toolbar-divider"></div>
 
@@ -98,7 +98,7 @@
     <button
       class="btn toolbar-btn"
       onclick={() => { uiStore.showAboutModal = true; }}
-      title="About DataForge"
+      title="About QueryArk"
     >
       <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
         <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2"/>

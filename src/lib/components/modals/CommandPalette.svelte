@@ -136,7 +136,7 @@
       toggleSidebar: () => { uiStore.sidebarCollapsed = !uiStore.sidebarCollapsed; },
       shortcuts: () => { uiStore.showShortcutsModal = true; },
       refreshSchema: () => {
-        window.dispatchEvent(new CustomEvent('dataforge:refresh-schema'));
+        window.dispatchEvent(new CustomEvent('queryark:refresh-schema'));
       },
     };
     for (const shortcut of DEFAULT_SHORTCUTS) {

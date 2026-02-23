@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { connectionStore } from '$lib/stores/connections.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
   import { tabStore } from '$lib/stores/tabs.svelte';
@@ -30,6 +30,23 @@
   let lastExecutionTime = $state<number | null>(null);
   let lastRowCount = $state<number | null>(null);
   let startupComplete = $state(false);
+
+  function handleSchemaRefresh() {
+    const connId = connectionStore.activeConnectionId;
+    if (!connId) return;
+    const conn = connectionStore.activeConnection;
+    const dbType = conn?.config.db_type;
+    const category = dbType ? DB_METADATA[dbType]?.category : null;
+    if (category === 'Relational' || category === 'Analytics' || category === 'WideColumn') {
+      schemaService.refreshSchema(connId);
+    } else {
+      schemaService.refreshContainers(connId);
+    }
+  }
+
+  onDestroy(() => {
+    window.removeEventListener('queryark:refresh-schema', handleSchemaRefresh);
+  });
 
   onMount(async () => {
     await connectionStore.init();
@@ -98,6 +115,9 @@
         }
       }
     }
+
+    // Listen for schema refresh events from CommandPalette
+    window.addEventListener('queryark:refresh-schema', handleSchemaRefresh);
 
     // Mark startup complete — effects below now respond to user actions only
     startupComplete = true;

@@ -3,6 +3,7 @@ use std::time::Instant;
 use async_trait::async_trait;
 use clickhouse::Client;
 
+use crate::db::escape::{escape_sql_literal, validate_identifier};
 use crate::db::traits::{DbDriver, SqlDriver};
 use crate::error::AppError;
 use crate::models::connection::{ConnectionConfig, DatabaseCategory};
@@ -10,14 +11,6 @@ use crate::models::query::{CellValue, ColumnDef, QueryResponse};
 use crate::models::schema::{
     ColumnInfo, ContainerInfo, FieldInfo, ForeignKeyInfo, IndexInfo, ItemInfo, SchemaInfo, TableInfo,
 };
-
-/// Escape a string for ClickHouse SQL literals.
-/// ClickHouse uses backslash escaping inside single-quoted strings.
-fn clickhouse_escape(s: &str) -> String {
-    s.replace('\\', "\\\\")
-     .replace('\'', "\\'")
-     .replace('\0', "\\0")
-}
 
 pub struct ClickHouseDriver {
     client: Client,
@@ -226,9 +219,10 @@ impl SqlDriver for ClickHouseDriver {
     }
 
     async fn get_tables(&self, schema: &str) -> Result<Vec<TableInfo>, AppError> {
+        validate_identifier(schema)?;
         let sql = format!(
             "SELECT name, engine FROM system.tables WHERE database = '{}' ORDER BY name",
-            schema.replace('\'', "\\'")
+            escape_sql_literal(schema)
         );
         let (_, rows) = self.query_to_response(&sql).await?;
 
@@ -250,13 +244,15 @@ impl SqlDriver for ClickHouseDriver {
     }
 
     async fn get_columns(&self, schema: &str, table: &str) -> Result<Vec<ColumnInfo>, AppError> {
+        validate_identifier(schema)?;
+        validate_identifier(table)?;
         let sql = format!(
             "SELECT name, type, default_kind, default_expression, position \
              FROM system.columns \
              WHERE database = '{}' AND table = '{}' \
              ORDER BY position",
-            schema.replace('\'', "\\'"),
-            table.replace('\'', "\\'")
+            escape_sql_literal(schema),
+            escape_sql_literal(table)
         );
         let (_, rows) = self.query_to_response(&sql).await?;
 
@@ -295,6 +291,8 @@ impl SqlDriver for ClickHouseDriver {
     }
 
     async fn get_table_data(&self, schema: &str, table: &str, limit: i64, offset: i64) -> Result<QueryResponse, AppError> {
+        validate_identifier(schema)?;
+        validate_identifier(table)?;
         let sql = format!(
             "SELECT * FROM `{}`.`{}` LIMIT {} OFFSET {}",
             schema, table, limit, offset
@@ -303,6 +301,8 @@ impl SqlDriver for ClickHouseDriver {
     }
 
     async fn get_row_count(&self, schema: &str, table: &str) -> Result<i64, AppError> {
+        validate_identifier(schema)?;
+        validate_identifier(table)?;
         let sql = format!(
             "SELECT count() as count FROM `{}`.`{}`",
             schema, table
@@ -324,16 +324,22 @@ impl SqlDriver for ClickHouseDriver {
         if pk_columns.len() != pk_values.len() || pk_columns.is_empty() {
             return Err(AppError::InvalidConfig("Invalid primary key specification".to_string()));
         }
+        validate_identifier(schema)?;
+        validate_identifier(table)?;
+        validate_identifier(column)?;
 
         let where_clauses: Vec<String> = pk_columns
             .iter()
             .zip(pk_values.iter())
-            .map(|(col, val)| format!("`{}` = '{}'", col, clickhouse_escape(val)))
-            .collect();
+            .map(|(col, val)| {
+                validate_identifier(col)?;
+                Ok(format!("`{}` = '{}'", col, escape_sql_literal(val)))
+            })
+            .collect::<Result<Vec<_>, AppError>>()?;
 
         let sql = format!(
             "ALTER TABLE `{}`.`{}` UPDATE `{}` = '{}' WHERE {}",
-            schema, table, column, clickhouse_escape(value), where_clauses.join(" AND ")
+            schema, table, column, escape_sql_literal(value), where_clauses.join(" AND ")
         );
 
         self.execute_raw(&sql).await?;
@@ -344,9 +350,14 @@ impl SqlDriver for ClickHouseDriver {
         if columns.len() != values.len() {
             return Err(AppError::InvalidConfig("Columns and values must have the same length".to_string()));
         }
+        validate_identifier(schema)?;
+        validate_identifier(table)?;
 
-        let cols: Vec<String> = columns.iter().map(|c| format!("`{}`", c)).collect();
-        let vals: Vec<String> = values.iter().map(|v| format!("'{}'", clickhouse_escape(v))).collect();
+        let cols: Vec<String> = columns.iter().map(|c| {
+            validate_identifier(c)?;
+            Ok(format!("`{}`", c))
+        }).collect::<Result<Vec<_>, AppError>>()?;
+        let vals: Vec<String> = values.iter().map(|v| format!("'{}'", escape_sql_literal(v))).collect();
 
         let sql = format!(
             "INSERT INTO `{}`.`{}` ({}) VALUES ({})",
@@ -361,6 +372,8 @@ impl SqlDriver for ClickHouseDriver {
         if pk_columns.is_empty() {
             return Err(AppError::InvalidConfig("At least one primary key column is required".to_string()));
         }
+        validate_identifier(schema)?;
+        validate_identifier(table)?;
 
         let mut total: u64 = 0;
         for pk_values in &pk_values_list {
@@ -371,8 +384,11 @@ impl SqlDriver for ClickHouseDriver {
             let where_clauses: Vec<String> = pk_columns
                 .iter()
                 .zip(pk_values.iter())
-                .map(|(col, val)| format!("`{}` = '{}'", col, clickhouse_escape(val)))
-                .collect();
+                .map(|(col, val)| {
+                    validate_identifier(col)?;
+                    Ok(format!("`{}` = '{}'", col, escape_sql_literal(val)))
+                })
+                .collect::<Result<Vec<_>, AppError>>()?;
 
             let sql = format!(
                 "ALTER TABLE `{}`.`{}` DELETE WHERE {}",

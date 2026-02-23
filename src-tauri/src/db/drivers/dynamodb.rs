@@ -38,7 +38,7 @@ impl DynamoDbDriver {
                     secret_key,
                     None,
                     None,
-                    "dataforge",
+                    "queryark",
                 ),
             );
         }

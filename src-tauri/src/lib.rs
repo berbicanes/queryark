@@ -76,6 +76,8 @@ pub fn run() {
             commands::keychain::get_keychain_password,
             commands::keychain::delete_keychain_password,
             commands::keychain::check_keychain_available,
+            commands::keychain::store_keychain_secret,
+            commands::keychain::get_keychain_secret,
             // Export/Import
             commands::export::export_to_csv,
             commands::export::export_to_json,

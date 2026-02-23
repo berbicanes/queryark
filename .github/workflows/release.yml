@@ -81,7 +81,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: v__VERSION__
-          releaseName: 'DataForge v__VERSION__'
+          releaseName: 'QueryArk v__VERSION__'
           releaseBody: 'See the assets for download links and installation instructions.'
           releaseDraft: true
           prerelease: false

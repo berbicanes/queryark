@@ -11,6 +11,7 @@ use arrow::datatypes::DataType as ArrowDataType;
 use async_trait::async_trait;
 use snowflake_api::SnowflakeApi;
 
+use crate::db::escape::escape_sql_literal;
 use crate::db::traits::{DbDriver, SqlDriver};
 use crate::error::AppError;
 use crate::models::connection::{ConnectionConfig, DatabaseCategory};
@@ -18,11 +19,6 @@ use crate::models::query::{CellValue, ColumnDef, QueryResponse};
 use crate::models::schema::{
     ColumnInfo, ContainerInfo, FieldInfo, ForeignKeyInfo, IndexInfo, ItemInfo, SchemaInfo, TableInfo,
 };
-
-/// Escape a string value for Snowflake SQL literals (single-quote escaping).
-fn sf_escape(s: &str) -> String {
-    s.replace('\'', "''")
-}
 
 /// Convert Arrow RecordBatches into ColumnDefs and rows of CellValues.
 fn arrow_batches_to_response(batches: &[RecordBatch]) -> (Vec<ColumnDef>, Vec<Vec<CellValue>>) {
@@ -289,7 +285,7 @@ impl DbDriver for SnowflakeDriver {
 #[async_trait]
 impl SqlDriver for SnowflakeDriver {
     async fn get_schemas(&self) -> Result<Vec<SchemaInfo>, AppError> {
-        let sql = format!("SHOW SCHEMAS IN DATABASE \"{}\"", sf_escape(&self.database));
+        let sql = format!("SHOW SCHEMAS IN DATABASE \"{}\"", escape_sql_literal(&self.database));
         let (_, rows) = self.query_to_response(&sql).await?;
 
         // SHOW SCHEMAS returns columns: created_on, name, is_default, ...
@@ -315,8 +311,8 @@ impl SqlDriver for SnowflakeDriver {
     async fn get_tables(&self, schema: &str) -> Result<Vec<TableInfo>, AppError> {
         let sql = format!(
             "SHOW TABLES IN SCHEMA \"{}\".\"{}\"",
-            sf_escape(&self.database),
-            sf_escape(schema)
+            escape_sql_literal(&self.database),
+            escape_sql_literal(schema)
         );
         let (_, rows) = self.query_to_response(&sql).await?;
 
@@ -347,9 +343,9 @@ impl SqlDriver for SnowflakeDriver {
     async fn get_columns(&self, schema: &str, table: &str) -> Result<Vec<ColumnInfo>, AppError> {
         let sql = format!(
             "SHOW COLUMNS IN TABLE \"{}\".\"{}\".\"{}\"\n",
-            sf_escape(&self.database),
-            sf_escape(schema),
-            sf_escape(table)
+            escape_sql_literal(&self.database),
+            escape_sql_literal(schema),
+            escape_sql_literal(table)
         );
         let (columns_def, rows) = self.query_to_response(&sql).await?;
 
@@ -426,9 +422,9 @@ impl SqlDriver for SnowflakeDriver {
                ON rc.UNIQUE_CONSTRAINT_NAME = rc2_kcu.CONSTRAINT_NAME AND rc.UNIQUE_CONSTRAINT_SCHEMA = rc2_kcu.TABLE_SCHEMA \
              WHERE tc.TABLE_SCHEMA = '{schema}' AND tc.TABLE_NAME = '{table}' AND tc.CONSTRAINT_TYPE = 'FOREIGN KEY' \
              ORDER BY tc.CONSTRAINT_NAME, kcu.ORDINAL_POSITION",
-            db = sf_escape(&self.database),
-            schema = sf_escape(schema),
-            table = sf_escape(table),
+            db = escape_sql_literal(&self.database),
+            schema = escape_sql_literal(schema),
+            table = escape_sql_literal(table),
         );
 
         match self.query_to_response(&sql).await {
@@ -462,8 +458,8 @@ impl SqlDriver for SnowflakeDriver {
     async fn get_table_data(&self, schema: &str, table: &str, limit: i64, offset: i64) -> Result<QueryResponse, AppError> {
         let sql = format!(
             "SELECT * FROM \"{}\".\"{}\" LIMIT {} OFFSET {}",
-            sf_escape(schema),
-            sf_escape(table),
+            escape_sql_literal(schema),
+            escape_sql_literal(table),
             limit,
             offset
         );
@@ -473,8 +469,8 @@ impl SqlDriver for SnowflakeDriver {
     async fn get_row_count(&self, schema: &str, table: &str) -> Result<i64, AppError> {
         let sql = format!(
             "SELECT COUNT(*) AS cnt FROM \"{}\".\"{}\"",
-            sf_escape(schema),
-            sf_escape(table)
+            escape_sql_literal(schema),
+            escape_sql_literal(table)
         );
         let (_, rows) = self.query_to_response(&sql).await?;
 
@@ -505,15 +501,15 @@ impl SqlDriver for SnowflakeDriver {
         let where_clauses: Vec<String> = pk_columns
             .iter()
             .zip(pk_values.iter())
-            .map(|(col, val)| format!("\"{}\" = '{}'", sf_escape(col), sf_escape(val)))
+            .map(|(col, val)| format!("\"{}\" = '{}'", escape_sql_literal(col), escape_sql_literal(val)))
             .collect();
 
         let sql = format!(
             "UPDATE \"{}\".\"{}\" SET \"{}\" = '{}' WHERE {}",
-            sf_escape(schema),
-            sf_escape(table),
-            sf_escape(column),
-            sf_escape(value),
+            escape_sql_literal(schema),
+            escape_sql_literal(table),
+            escape_sql_literal(column),
+            escape_sql_literal(value),
             where_clauses.join(" AND ")
         );
 
@@ -532,13 +528,13 @@ impl SqlDriver for SnowflakeDriver {
             return Err(AppError::InvalidConfig("Columns and values must have the same length".to_string()));
         }
 
-        let cols: Vec<String> = columns.iter().map(|c| format!("\"{}\"", sf_escape(c))).collect();
-        let vals: Vec<String> = values.iter().map(|v| format!("'{}'", sf_escape(v))).collect();
+        let cols: Vec<String> = columns.iter().map(|c| format!("\"{}\"", escape_sql_literal(c))).collect();
+        let vals: Vec<String> = values.iter().map(|v| format!("'{}'", escape_sql_literal(v))).collect();
 
         let sql = format!(
             "INSERT INTO \"{}\".\"{}\" ({}) VALUES ({})",
-            sf_escape(schema),
-            sf_escape(table),
+            escape_sql_literal(schema),
+            escape_sql_literal(table),
             cols.join(", "),
             vals.join(", ")
         );
@@ -569,13 +565,13 @@ impl SqlDriver for SnowflakeDriver {
             let where_clauses: Vec<String> = pk_columns
                 .iter()
                 .zip(pk_values.iter())
-                .map(|(col, val)| format!("\"{}\" = '{}'", sf_escape(col), sf_escape(val)))
+                .map(|(col, val)| format!("\"{}\" = '{}'", escape_sql_literal(col), escape_sql_literal(val)))
                 .collect();
 
             let sql = format!(
                 "DELETE FROM \"{}\".\"{}\" WHERE {}",
-                sf_escape(schema),
-                sf_escape(table),
+                escape_sql_literal(schema),
+                escape_sql_literal(table),
                 where_clauses.join(" AND ")
             );
 

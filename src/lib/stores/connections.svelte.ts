@@ -1,4 +1,5 @@
 import { load, Store } from '@tauri-apps/plugin-store';
+import { checkKeychainAvailable, storeKeychainPassword, storeKeychainSecret } from '$lib/services/tauri';
 import type { ConnectionConfig, ConnectionState, ConnectionStatus } from '$lib/types/connection';
 
 // Create a class-based store using Svelte 5 runes
@@ -39,6 +40,65 @@ class ConnectionStore {
         config,
         status: 'disconnected' as ConnectionStatus
       }));
+    }
+    await this.migrateToKeychain();
+  }
+
+  /** Migrate plaintext passwords to OS keychain for connections that haven't opted in yet. */
+  private async migrateToKeychain() {
+    let keychainAvailable: boolean;
+    try {
+      keychainAvailable = await checkKeychainAvailable();
+    } catch {
+      return; // Keychain not available, skip migration
+    }
+    if (!keychainAvailable) return;
+
+    let changed = false;
+    for (const conn of this.connections) {
+      const config = conn.config;
+      if (config.use_keychain) continue; // Already using keychain
+
+      try {
+        let migrated = false;
+
+        if (config.password) {
+          await storeKeychainPassword(config.id, config.password);
+          config.password = undefined;
+          migrated = true;
+        }
+        if (config.ssh_password) {
+          await storeKeychainSecret(config.id, 'ssh_password', config.ssh_password);
+          config.ssh_password = undefined;
+          migrated = true;
+        }
+        if (config.ssh_passphrase) {
+          await storeKeychainSecret(config.id, 'ssh_passphrase', config.ssh_passphrase);
+          config.ssh_passphrase = undefined;
+          migrated = true;
+        }
+        if (config.cloud_auth?.AwsCredentials?.secret_key) {
+          await storeKeychainSecret(config.id, 'aws_secret_key', config.cloud_auth.AwsCredentials.secret_key);
+          config.cloud_auth.AwsCredentials.secret_key = '';
+          migrated = true;
+        }
+        if (config.cloud_auth?.GcpServiceAccount?.credentials_json) {
+          await storeKeychainSecret(config.id, 'credentials_json', config.cloud_auth.GcpServiceAccount.credentials_json);
+          config.cloud_auth.GcpServiceAccount.credentials_json = '';
+          migrated = true;
+        }
+
+        if (migrated) {
+          config.use_keychain = true;
+          changed = true;
+        }
+      } catch {
+        // Per-connection failure: leave plaintext as-is
+      }
+    }
+
+    if (changed) {
+      await this.persist();
     }
   }
 

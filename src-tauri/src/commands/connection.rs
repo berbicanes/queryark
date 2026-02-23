@@ -11,11 +11,51 @@ use crate::db::tunnel::TunnelManager;
 use crate::error::AppError;
 use crate::models::connection::{ConnectionConfig, DatabaseType};
 
-/// Resolve the password from OS keychain if use_keychain is enabled.
+/// Resolve secrets from OS keychain if use_keychain is enabled.
+/// Resolves: password, SSH password/passphrase, AWS secret key, GCP credentials JSON.
 fn resolve_keychain_password(config: &mut ConnectionConfig) {
-    if config.use_keychain {
-        if let Some(pw) = keychain::get_password(&config.id) {
+    if !config.use_keychain {
+        return;
+    }
+
+    // Main password
+    if config.password.as_deref().unwrap_or("").is_empty() {
+        if let Some(pw) = keychain::get_secret(&config.id, "password") {
             config.password = Some(pw);
+        }
+    }
+
+    // SSH password
+    if config.ssh_enabled {
+        if config.ssh_password.as_deref().unwrap_or("").is_empty() {
+            if let Some(pw) = keychain::get_secret(&config.id, "ssh_password") {
+                config.ssh_password = Some(pw);
+            }
+        }
+        if config.ssh_passphrase.as_deref().unwrap_or("").is_empty() {
+            if let Some(pp) = keychain::get_secret(&config.id, "ssh_passphrase") {
+                config.ssh_passphrase = Some(pp);
+            }
+        }
+    }
+
+    // Cloud credentials
+    if let Some(ref mut cloud_auth) = config.cloud_auth {
+        match cloud_auth {
+            crate::models::connection::CloudAuth::AwsCredentials { secret_key, .. } => {
+                if secret_key.is_empty() {
+                    if let Some(sk) = keychain::get_secret(&config.id, "aws_secret_key") {
+                        *secret_key = sk;
+                    }
+                }
+            }
+            crate::models::connection::CloudAuth::GcpServiceAccount { credentials_json } => {
+                if credentials_json.is_empty() {
+                    if let Some(cj) = keychain::get_secret(&config.id, "credentials_json") {
+                        *credentials_json = cj;
+                    }
+                }
+            }
         }
     }
 }

@@ -49,7 +49,7 @@
           <circle cx="10" cy="36" r="2" fill="var(--accent)"/>
         </svg>
       </div>
-      <h1 class="welcome-title">Welcome to DataForge</h1>
+      <h1 class="welcome-title">Welcome to QueryArk</h1>
       <p class="welcome-subtitle">A fast, lightweight database IDE for developers</p>
 
       <button class="cta-btn" onclick={onAddConnection}>
@@ -78,7 +78,7 @@
             <circle cx="10" cy="24" r="2" fill="var(--accent)"/>
             <circle cx="10" cy="36" r="2" fill="var(--accent)"/>
           </svg>
-          <span class="dashboard-title">DataForge</span>
+          <span class="dashboard-title">QueryArk</span>
           <span class="dashboard-subtitle">Your Connections</span>
         </div>
       </div>

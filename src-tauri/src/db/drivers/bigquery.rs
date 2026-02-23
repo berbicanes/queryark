@@ -7,6 +7,7 @@ use gcp_bigquery_client::model::field_type::FieldType;
 use gcp_bigquery_client::model::query_request::QueryRequest;
 use gcp_bigquery_client::Client;
 
+use crate::db::escape::escape_sql_literal;
 use crate::db::traits::{DbDriver, SqlDriver};
 use crate::error::AppError;
 use crate::models::connection::{CloudAuth, ConnectionConfig, DatabaseCategory};
@@ -14,11 +15,6 @@ use crate::models::query::{CellValue, ColumnDef, QueryResponse};
 use crate::models::schema::{
     ColumnInfo, ContainerInfo, FieldInfo, ForeignKeyInfo, IndexInfo, ItemInfo, SchemaInfo, TableInfo,
 };
-
-/// Escape a string for BigQuery SQL literals (single-quote escaping).
-fn bq_escape(s: &str) -> String {
-    s.replace('\\', "\\\\").replace('\'', "\\'")
-}
 
 /// Format a BigQuery FieldType enum variant to a readable string.
 fn field_type_to_string(ft: &FieldType) -> String {
@@ -331,8 +327,8 @@ impl SqlDriver for BigQueryDriver {
     async fn get_table_data(&self, schema: &str, table: &str, limit: i64, offset: i64) -> Result<QueryResponse, AppError> {
         let sql = format!(
             "SELECT * FROM `{}`.`{}` LIMIT {} OFFSET {}",
-            bq_escape(schema),
-            bq_escape(table),
+            escape_sql_literal(schema),
+            escape_sql_literal(table),
             limit,
             offset
         );
@@ -342,8 +338,8 @@ impl SqlDriver for BigQueryDriver {
     async fn get_row_count(&self, schema: &str, table: &str) -> Result<i64, AppError> {
         let sql = format!(
             "SELECT COUNT(*) AS cnt FROM `{}`.`{}`",
-            bq_escape(schema),
-            bq_escape(table)
+            escape_sql_literal(schema),
+            escape_sql_literal(table)
         );
         let (_, rows) = self.query_to_response(&sql).await?;
 
@@ -374,15 +370,15 @@ impl SqlDriver for BigQueryDriver {
         let where_clauses: Vec<String> = pk_columns
             .iter()
             .zip(pk_values.iter())
-            .map(|(col, val)| format!("`{}` = '{}'", bq_escape(col), bq_escape(val)))
+            .map(|(col, val)| format!("`{}` = '{}'", escape_sql_literal(col), escape_sql_literal(val)))
             .collect();
 
         let sql = format!(
             "UPDATE `{}`.`{}` SET `{}` = '{}' WHERE {}",
-            bq_escape(schema),
-            bq_escape(table),
-            bq_escape(column),
-            bq_escape(value),
+            escape_sql_literal(schema),
+            escape_sql_literal(table),
+            escape_sql_literal(column),
+            escape_sql_literal(value),
             where_clauses.join(" AND ")
         );
 
@@ -401,13 +397,13 @@ impl SqlDriver for BigQueryDriver {
             return Err(AppError::InvalidConfig("Columns and values must have the same length".to_string()));
         }
 
-        let cols: Vec<String> = columns.iter().map(|c| format!("`{}`", bq_escape(c))).collect();
-        let vals: Vec<String> = values.iter().map(|v| format!("'{}'", bq_escape(v))).collect();
+        let cols: Vec<String> = columns.iter().map(|c| format!("`{}`", escape_sql_literal(c))).collect();
+        let vals: Vec<String> = values.iter().map(|v| format!("'{}'", escape_sql_literal(v))).collect();
 
         let sql = format!(
             "INSERT INTO `{}`.`{}` ({}) VALUES ({})",
-            bq_escape(schema),
-            bq_escape(table),
+            escape_sql_literal(schema),
+            escape_sql_literal(table),
             cols.join(", "),
             vals.join(", ")
         );
@@ -438,13 +434,13 @@ impl SqlDriver for BigQueryDriver {
             let where_clauses: Vec<String> = pk_columns
                 .iter()
                 .zip(pk_values.iter())
-                .map(|(col, val)| format!("`{}` = '{}'", bq_escape(col), bq_escape(val)))
+                .map(|(col, val)| format!("`{}` = '{}'", escape_sql_literal(col), escape_sql_literal(val)))
                 .collect();
 
             let sql = format!(
                 "DELETE FROM `{}`.`{}` WHERE {}",
-                bq_escape(schema),
-                bq_escape(table),
+                escape_sql_literal(schema),
+                escape_sql_literal(table),
                 where_clauses.join(" AND ")
             );
 

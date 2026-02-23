@@ -1,5 +1,6 @@
 pub mod cancel;
 pub mod drivers;
+pub mod escape;
 pub mod handle;
 pub mod keychain;
 pub mod pool;

@@ -183,6 +183,13 @@ class SchemaStore {
     this.lastRefreshed[connectionId] = Date.now();
   }
 
+  clearTableStats(connectionId: string, schemaName: string, tableName: string) {
+    const key = `${schemaName}.${tableName}`;
+    if (this.cache[connectionId]?.tableStats) {
+      delete this.cache[connectionId].tableStats[key];
+    }
+  }
+
   clearConnection(connectionId: string) {
     delete this.cache[connectionId];
     delete this.browserCache[connectionId];

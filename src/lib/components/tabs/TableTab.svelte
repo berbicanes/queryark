@@ -4,6 +4,7 @@
   import { uiStore } from '$lib/stores/ui.svelte';
   import { changeTracker } from '$lib/stores/changeTracker.svelte';
   import { connectionStore } from '$lib/stores/connections.svelte';
+  import { schemaStore } from '$lib/stores/schema.svelte';
   import type { Tab } from '$lib/types/tabs';
   import type { QueryResponse, SortColumn, FilterCondition } from '$lib/types/query';
   import { extractCellValue } from '$lib/utils/formatters';
@@ -257,6 +258,9 @@
       uiStore.showSuccess(`Applied ${changes.length} change(s)`);
       await loadData();
       await loadTotalRows();
+      if (tab.schema && tab.table) {
+        schemaStore.clearTableStats(tab.connectionId, tab.schema, tab.table);
+      }
     } catch (err) {
       uiStore.showError(`Failed to apply changes: ${err instanceof Error ? err.message : String(err)}`);
     } finally {

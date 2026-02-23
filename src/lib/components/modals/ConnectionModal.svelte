@@ -4,7 +4,7 @@
   import { connectionStore } from '$lib/stores/connections.svelte';
   import { uiStore } from '$lib/stores/ui.svelte';
   import * as connectionService from '$lib/services/connectionService';
-  import { storeKeychainPassword, getKeychainPassword, checkKeychainAvailable } from '$lib/services/tauri';
+  import { storeKeychainPassword, getKeychainPassword, checkKeychainAvailable, storeKeychainSecret } from '$lib/services/tauri';
   import type { ConnectionConfig, DatabaseType } from '$lib/types/connection';
   import { DB_METADATA, DB_GROUPS } from '$lib/types/database';
 
@@ -86,10 +86,14 @@
   let meta = $derived(DB_METADATA[dbType]);
   let showSslCerts = $derived(useSsl && SSL_CERT_DRIVERS.includes(dbType));
 
-  // Check keychain availability on mount
+  // Check keychain availability on mount and default to enabled
   $effect(() => {
     checkKeychainAvailable().then(available => {
       keychainAvailable = available;
+      // Default new connections to keychain-enabled when available
+      if (available && !editConnection) {
+        useKeychain = true;
+      }
     }).catch(() => {
       keychainAvailable = false;
     });
@@ -340,10 +344,28 @@
     try {
       const config = buildConfig();
 
-      // Store password in keychain if enabled
-      if (useKeychain && keychainAvailable && password) {
-        await storeKeychainPassword(config.id, password);
-        config.password = undefined; // Don't persist in JSON
+      // Store all sensitive fields in keychain if enabled
+      if (useKeychain && keychainAvailable) {
+        if (password) {
+          await storeKeychainPassword(config.id, password);
+          config.password = undefined;
+        }
+        if (sshPassword) {
+          await storeKeychainSecret(config.id, 'ssh_password', sshPassword);
+          config.ssh_password = undefined;
+        }
+        if (sshPassphrase) {
+          await storeKeychainSecret(config.id, 'ssh_passphrase', sshPassphrase);
+          config.ssh_passphrase = undefined;
+        }
+        if (awsSecretKey && config.cloud_auth?.AwsCredentials) {
+          await storeKeychainSecret(config.id, 'aws_secret_key', awsSecretKey);
+          config.cloud_auth.AwsCredentials.secret_key = '';
+        }
+        if (bigqueryCredentials && config.cloud_auth?.GcpServiceAccount) {
+          await storeKeychainSecret(config.id, 'credentials_json', bigqueryCredentials);
+          config.cloud_auth.GcpServiceAccount.credentials_json = '';
+        }
       }
 
       await connectionService.saveConnection(config);

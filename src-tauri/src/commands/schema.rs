@@ -4,6 +4,7 @@ use log::{debug, error, info};
 use tauri::State;
 use tokio::time::timeout;
 
+use crate::db::escape::escape_sql_literal;
 use crate::db::pool::PoolManager;
 use crate::error::AppError;
 use crate::models::connection::DatabaseCategory;
@@ -39,11 +40,6 @@ pub(crate) fn quote_ident(name: &str, category: &DatabaseCategory) -> String {
     }
 }
 
-/// Escape a string value for SQL (double single quotes).
-fn escape_sql_string(value: &str) -> String {
-    value.replace('\'', "''")
-}
-
 /// Build a WHERE clause from filter conditions.
 fn build_where_clause(filters: &[FilterCondition], category: &DatabaseCategory) -> String {
     if filters.is_empty() {
@@ -55,21 +51,21 @@ fn build_where_clause(filters: &[FilterCondition], category: &DatabaseCategory) 
         .filter_map(|f| {
             let col = quote_ident(&f.column, category);
             match f.operator.as_str() {
-                "eq" => Some(format!("{} = '{}'", col, escape_sql_string(&f.value))),
-                "neq" => Some(format!("{} != '{}'", col, escape_sql_string(&f.value))),
-                "gt" => Some(format!("{} > '{}'", col, escape_sql_string(&f.value))),
-                "gte" => Some(format!("{} >= '{}'", col, escape_sql_string(&f.value))),
-                "lt" => Some(format!("{} < '{}'", col, escape_sql_string(&f.value))),
-                "lte" => Some(format!("{} <= '{}'", col, escape_sql_string(&f.value))),
+                "eq" => Some(format!("{} = '{}'", col, escape_sql_literal(&f.value))),
+                "neq" => Some(format!("{} != '{}'", col, escape_sql_literal(&f.value))),
+                "gt" => Some(format!("{} > '{}'", col, escape_sql_literal(&f.value))),
+                "gte" => Some(format!("{} >= '{}'", col, escape_sql_literal(&f.value))),
+                "lt" => Some(format!("{} < '{}'", col, escape_sql_literal(&f.value))),
+                "lte" => Some(format!("{} <= '{}'", col, escape_sql_literal(&f.value))),
                 "contains" => Some(format!(
                     "{} LIKE '%{}%'",
                     col,
-                    escape_sql_string(&f.value).replace('%', "\\%")
+                    escape_sql_literal(&f.value).replace('%', "\\%")
                 )),
                 "starts_with" => Some(format!(
                     "{} LIKE '{}%'",
                     col,
-                    escape_sql_string(&f.value).replace('%', "\\%")
+                    escape_sql_literal(&f.value).replace('%', "\\%")
                 )),
                 "is_null" => Some(format!("{} IS NULL", col)),
                 "is_not_null" => Some(format!("{} IS NOT NULL", col)),
@@ -111,7 +107,7 @@ fn build_pk_where(pk_columns: &[String], pk_values: &[String], category: &Databa
             format!(
                 "{} = '{}'",
                 quote_ident(col, category),
-                escape_sql_string(val)
+                escape_sql_literal(val)
             )
         })
         .collect::<Vec<_>>()

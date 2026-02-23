@@ -1,4 +1,4 @@
-# DataForge — Database IDE
+# QueryArk — Database IDE
 
 A desktop database management tool built with **Tauri 2 (Rust)** + **SvelteKit 5** + **TypeScript**, aiming to be a lightweight, fast alternative to TablePlus/DBeaver.
 
@@ -186,12 +186,12 @@ npm run check            # TypeScript/Svelte type checking
 - Oracle (`cargo build --features oracle` — requires Oracle Instant Client)
 
 ### Known issues to fix:
-- **SQL injection risk**: update_cell, insert_row, delete_rows use string concatenation instead of parameterized queries
-- **Passwords stored in plaintext**: plugin-store saves JSON to disk unencrypted
+- ~~**SQL injection risk**: update_cell, insert_row, delete_rows use string concatenation instead of parameterized queries~~ (fixed: shared escape module with comprehensive literal escaping + identifier validation; ClickHouse/Snowflake/BigQuery drivers and schema.rs helpers hardened)
+- ~~**Passwords stored in plaintext**: plugin-store saves JSON to disk unencrypted~~ (fixed: keychain-by-default for new connections, auto-migration of existing plaintext passwords on startup, all secret types — password, SSH password/passphrase, AWS secret key, GCP credentials — stored in OS keychain)
 - ~~Connection pool hardcoded to 5, no idle timeout or health checks~~ (fixed: configurable pool tuning)
 - ~~No query timeout enforcement~~ (fixed: configurable query timeout)
 - ~~Full result sets loaded into memory (no streaming)~~ (mitigated: result set size limits with configurable max rows)
-- Schema cache never auto-invalidates
+- ~~Schema cache never auto-invalidates~~ (fixed: auto-invalidate on DDL in QueryTab, clear table stats after DML in TableTab, command palette refresh event wired up)
 
 ---
 

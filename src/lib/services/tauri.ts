@@ -223,6 +223,14 @@ export async function checkKeychainAvailable(): Promise<boolean> {
   return invoke<boolean>('check_keychain_available');
 }
 
+export async function storeKeychainSecret(connectionId: string, key: string, value: string): Promise<void> {
+  return invoke<void>('store_keychain_secret', { connectionId, key, value });
+}
+
+export async function getKeychainSecret(connectionId: string, key: string): Promise<string | null> {
+  return invoke<string | null>('get_keychain_secret', { connectionId, key });
+}
+
 // Export/Import operations
 export async function exportToCsv(
   filePath: string, columns: ColumnDef[], rows: CellValue[][],

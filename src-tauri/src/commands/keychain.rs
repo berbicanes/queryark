@@ -23,3 +23,20 @@ pub async fn delete_keychain_password(connection_id: String) -> Result<(), AppEr
 pub async fn check_keychain_available() -> Result<bool, AppError> {
     Ok(keychain::is_keychain_available())
 }
+
+#[tauri::command]
+pub async fn store_keychain_secret(
+    connection_id: String,
+    key: String,
+    value: String,
+) -> Result<(), AppError> {
+    keychain::store_secret(&connection_id, &key, &value)
+}
+
+#[tauri::command]
+pub async fn get_keychain_secret(
+    connection_id: String,
+    key: String,
+) -> Result<Option<String>, AppError> {
+    Ok(keychain::get_secret(&connection_id, &key))
+}

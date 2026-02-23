@@ -8,7 +8,9 @@
   import { uiStore } from '$lib/stores/ui.svelte';
   import { settingsStore } from '$lib/stores/settings.svelte';
   import * as queryService from '$lib/services/queryService';
+  import * as schemaService from '$lib/services/schemaService';
   import * as tauri from '$lib/services/tauri';
+  import { DB_METADATA } from '$lib/types/database';
   import type { Tab } from '$lib/types/tabs';
   import type { QueryResponse, SortColumn, CellValue } from '$lib/types/query';
   import { extractCellValue } from '$lib/utils/formatters';
@@ -299,6 +301,25 @@
     }
 
     tabStore.updateTabSql(tab.id, sqlValue);
+
+    // Auto-invalidate schema cache if any DDL statement was executed successfully
+    if (!errorMessage) {
+      const DDL_PATTERN = /^\s*(CREATE|ALTER|DROP|RENAME|TRUNCATE)\b/im;
+      const statements = splitStatements(sqlValue);
+      const hasDdl = statements.some(stmt => DDL_PATTERN.test(stmt));
+      if (hasDdl) {
+        const connId = tab.connectionId;
+        schemaStore.clearConnection(connId);
+        const conn = connectionStore.activeConnection;
+        const dbType = conn?.config.db_type;
+        const category = dbType ? DB_METADATA[dbType]?.category : null;
+        if (category === 'Relational' || category === 'Analytics' || category === 'WideColumn') {
+          schemaService.refreshSchema(connId);
+        } else {
+          schemaService.refreshContainers(connId);
+        }
+      }
+    }
   }
 
   /**
@@ -486,11 +507,11 @@
   }
 
   onMount(() => {
-    window.addEventListener('dataforge:execute-query', handleGlobalExecute);
+    window.addEventListener('queryark:execute-query', handleGlobalExecute);
   });
 
   onDestroy(() => {
-    window.removeEventListener('dataforge:execute-query', handleGlobalExecute);
+    window.removeEventListener('queryark:execute-query', handleGlobalExecute);
   });
 </script>
 
