@@ -37,6 +37,7 @@ class SchemaStore {
   cache = $state<Record<string, SchemaCache>>({}); // connectionId -> SchemaCache
   browserCache = $state<Record<string, BrowserCache>>({}); // connectionId -> BrowserCache
   lastRefreshed = $state<Record<string, number>>({}); // connectionId -> timestamp
+  visibleSchemas = $state<Record<string, string[] | null>>({}); // connectionId -> visible schema names (null = show all)
 
   // SQL-specific getters
   getSchemas(connectionId: string): SchemaInfo[] {
@@ -183,6 +184,44 @@ class SchemaStore {
     this.lastRefreshed[connectionId] = Date.now();
   }
 
+  // Schema visibility
+  getVisibleSchemas(connectionId: string): string[] | null {
+    return this.visibleSchemas[connectionId] ?? null;
+  }
+
+  setVisibleSchemas(connectionId: string, schemas: string[] | null) {
+    this.visibleSchemas[connectionId] = schemas;
+  }
+
+  isSchemaVisible(connectionId: string, schemaName: string): boolean {
+    const visible = this.visibleSchemas[connectionId];
+    if (visible === null || visible === undefined) return true;
+    return visible.includes(schemaName);
+  }
+
+  toggleSchemaVisibility(connectionId: string, schemaName: string, allSchemas: string[]) {
+    const current = this.visibleSchemas[connectionId];
+    if (current === null || current === undefined) {
+      // Currently showing all — toggle off means show all except this one
+      this.visibleSchemas[connectionId] = allSchemas.filter(s => s !== schemaName);
+    } else if (current.includes(schemaName)) {
+      // Remove it
+      const next = current.filter(s => s !== schemaName);
+      // If none visible, keep at least one (don't allow empty)
+      if (next.length === 0) return;
+      this.visibleSchemas[connectionId] = next;
+    } else {
+      // Add it
+      const next = [...current, schemaName];
+      // If all are now visible, set to null (show all)
+      if (next.length === allSchemas.length) {
+        this.visibleSchemas[connectionId] = null;
+      } else {
+        this.visibleSchemas[connectionId] = next;
+      }
+    }
+  }
+
   clearTableStats(connectionId: string, schemaName: string, tableName: string) {
     const key = `${schemaName}.${tableName}`;
     if (this.cache[connectionId]?.tableStats) {
@@ -194,6 +233,7 @@ class SchemaStore {
     delete this.cache[connectionId];
     delete this.browserCache[connectionId];
     delete this.lastRefreshed[connectionId];
+    delete this.visibleSchemas[connectionId];
   }
 }
 

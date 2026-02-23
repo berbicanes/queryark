@@ -26,6 +26,9 @@ class SettingsStore {
   restoreSession = $state(true);
   lastActiveConnectionId = $state<string | null>(null);
 
+  // Schema visibility per connection
+  schemaVisibility = $state<Record<string, string[]>>({});
+
   private store: Store | null = null;
   private initialized = false;
 
@@ -75,6 +78,9 @@ class SettingsStore {
     const savedLastConnId = await this.store.get<string | null>('lastActiveConnectionId');
     if (savedLastConnId !== undefined) this.lastActiveConnectionId = savedLastConnId;
 
+    const savedSchemaVisibility = await this.store.get<Record<string, string[]>>('schemaVisibility');
+    if (savedSchemaVisibility) this.schemaVisibility = savedSchemaVisibility;
+
     this.applyTheme();
     this.applyFontSizes();
     this.initialized = true;
@@ -99,6 +105,7 @@ class SettingsStore {
       await this.store.set('windowY', this.windowY);
       await this.store.set('restoreSession', this.restoreSession);
       await this.store.set('lastActiveConnectionId', this.lastActiveConnectionId);
+      await this.store.set('schemaVisibility', this.schemaVisibility);
       await this.store.save();
     }
   }
@@ -176,6 +183,20 @@ class SettingsStore {
 
   setLastActiveConnectionId(id: string | null) {
     this.lastActiveConnectionId = id;
+    this.persist();
+  }
+
+  getSchemaVisibility(connectionId: string): string[] | null {
+    return this.schemaVisibility[connectionId] ?? null;
+  }
+
+  setSchemaVisibility(connectionId: string, schemas: string[] | null) {
+    if (schemas === null) {
+      const { [connectionId]: _, ...rest } = this.schemaVisibility;
+      this.schemaVisibility = rest;
+    } else {
+      this.schemaVisibility = { ...this.schemaVisibility, [connectionId]: schemas };
+    }
     this.persist();
   }
 

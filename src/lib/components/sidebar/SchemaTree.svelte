@@ -1,5 +1,6 @@
 <script lang="ts">
   import { schemaStore } from '$lib/stores/schema.svelte';
+  import { settingsStore } from '$lib/stores/settings.svelte';
   import { tabStore } from '$lib/stores/tabs.svelte';
   import { connectionStore } from '$lib/stores/connections.svelte';
   import * as schemaService from '$lib/services/schemaService';
@@ -41,6 +42,109 @@
   let schemas = $derived(schemaStore.getSchemas(connectionId));
   // Generic data
   let containers = $derived(schemaStore.getContainers(connectionId));
+
+  // Schema visibility
+  const SYSTEM_SCHEMAS: Record<string, string[]> = {
+    PostgreSQL: ['pg_catalog', 'information_schema', 'pg_toast'],
+    CockroachDB: ['pg_catalog', 'information_schema', 'pg_extension', 'crdb_internal'],
+    Redshift: ['pg_catalog', 'information_schema', 'pg_toast'],
+    MySQL: ['mysql', 'sys', 'performance_schema', 'information_schema'],
+    MariaDB: ['mysql', 'sys', 'performance_schema', 'information_schema'],
+  };
+
+  function getSystemSchemas(): string[] {
+    return SYSTEM_SCHEMAS[dbType] ?? ['information_schema'];
+  }
+
+  let schemaDropdownOpen = $state(false);
+  let visibilityInitialized = $state(false);
+
+  // Initialize visibility from persisted settings or apply defaults when schemas load
+  $effect(() => {
+    if (schemas.length < 2 || visibilityInitialized) return;
+    const allNames = schemas.map(s => s.name);
+    const saved = settingsStore.getSchemaVisibility(connectionId);
+    if (saved) {
+      // Restore saved — filter to only schemas that still exist
+      const valid = saved.filter(s => allNames.includes(s));
+      schemaStore.setVisibleSchemas(connectionId, valid.length > 0 ? valid : null);
+    } else {
+      // First time: hide system schemas
+      const sysSchemas = getSystemSchemas();
+      const visible = allNames.filter(s => !sysSchemas.includes(s));
+      if (visible.length > 0 && visible.length < allNames.length) {
+        schemaStore.setVisibleSchemas(connectionId, visible);
+        settingsStore.setSchemaVisibility(connectionId, visible);
+      }
+    }
+    visibilityInitialized = true;
+  });
+
+  // Auto-expand when only 1 schema is visible
+  $effect(() => {
+    if (!visibilityInitialized) return;
+    const visible = schemaStore.getVisibleSchemas(connectionId);
+    if (visible && visible.length === 1) {
+      const schemaName = visible[0];
+      const schema = schemas.find(s => s.name === schemaName);
+      if (schema && !expandedSchemas.has(schemaName)) {
+        handleSchemaExpand(schema, true);
+      }
+    }
+  });
+
+  let allSchemaNames = $derived(schemas.map(s => s.name));
+  let showSchemaSelector = $derived(isSqlLike && schemas.length >= 2);
+
+  let filteredSchemas = $derived.by(() => {
+    const visible = schemaStore.getVisibleSchemas(connectionId);
+    if (!visible) return schemas;
+    return schemas.filter(s => visible.includes(s.name));
+  });
+
+  let selectorLabel = $derived.by(() => {
+    const visible = schemaStore.getVisibleSchemas(connectionId);
+    if (!visible) return 'All schemas';
+    if (visible.length === 1) return visible[0];
+    return `${visible.length} schemas`;
+  });
+
+  let allSchemasVisible = $derived(schemaStore.getVisibleSchemas(connectionId) === null);
+
+  function toggleAllSchemas() {
+    if (allSchemasVisible) {
+      // Switch to showing only non-system schemas
+      const sysSchemas = getSystemSchemas();
+      const visible = allSchemaNames.filter(s => !sysSchemas.includes(s));
+      if (visible.length > 0 && visible.length < allSchemaNames.length) {
+        schemaStore.setVisibleSchemas(connectionId, visible);
+        settingsStore.setSchemaVisibility(connectionId, visible);
+      }
+    } else {
+      schemaStore.setVisibleSchemas(connectionId, null);
+      settingsStore.setSchemaVisibility(connectionId, null);
+    }
+  }
+
+  function toggleSchema(schemaName: string) {
+    schemaStore.toggleSchemaVisibility(connectionId, schemaName, allSchemaNames);
+    const updated = schemaStore.getVisibleSchemas(connectionId);
+    settingsStore.setSchemaVisibility(connectionId, updated);
+  }
+
+  function isSchemaChecked(schemaName: string): boolean {
+    return schemaStore.isSchemaVisible(connectionId, schemaName);
+  }
+
+  function closeDropdown() {
+    schemaDropdownOpen = false;
+  }
+
+  function handleDropdownKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape') {
+      closeDropdown();
+    }
+  }
 
   // Search
   let searchQuery = $state('');
@@ -298,6 +402,51 @@
     </div>
   {/if}
 
+  {#if showSchemaSelector}
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div class="schema-selector" onkeydown={handleDropdownKeydown}>
+      <button
+        class="schema-selector-btn"
+        onclick={() => schemaDropdownOpen = !schemaDropdownOpen}
+        aria-expanded={schemaDropdownOpen}
+        aria-haspopup="listbox"
+      >
+        <svg class="schema-icon" width="12" height="12" viewBox="0 0 16 16" fill="none">
+          <path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span class="schema-selector-label">{selectorLabel}</span>
+        <svg class="schema-chevron" class:open={schemaDropdownOpen} width="10" height="10" viewBox="0 0 16 16" fill="none">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      {#if schemaDropdownOpen}
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div class="schema-dropdown-backdrop" onclick={closeDropdown} onkeydown={handleDropdownKeydown}></div>
+        <div class="schema-dropdown" role="listbox">
+          <label class="schema-option schema-option-all">
+            <input
+              type="checkbox"
+              checked={allSchemasVisible}
+              onchange={toggleAllSchemas}
+            />
+            <span>All schemas</span>
+          </label>
+          <div class="schema-dropdown-divider"></div>
+          {#each allSchemaNames as name}
+            <label class="schema-option">
+              <input
+                type="checkbox"
+                checked={isSchemaChecked(name)}
+                onchange={() => toggleSchema(name)}
+              />
+              <span>{name}</span>
+            </label>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  {/if}
+
   {#if isSqlLike}
     <!-- SQL-like tree: Schemas > (Tables/Views/Functions/Sequences/Types) > Columns -->
     {#if schemas.length === 0}
@@ -305,7 +454,7 @@
         <span class="text-muted">No {meta.containerLabel.toLowerCase()}s loaded</span>
       </div>
     {:else}
-      {#each schemas as schema}
+      {#each filteredSchemas as schema}
         {#if hasSearchMatch(schema.name) || !searchQuery}
           <TreeNode
             label={schema.name}
@@ -602,5 +751,107 @@
     padding: 12px 16px;
     text-align: center;
     font-size: 11px;
+  }
+
+  .schema-selector {
+    position: relative;
+    padding: 2px 8px 4px;
+  }
+
+  .schema-selector-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 4px 8px;
+    font-size: 11px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .schema-selector-btn:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+  }
+
+  .schema-icon {
+    flex-shrink: 0;
+    opacity: 0.6;
+  }
+
+  .schema-selector-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .schema-chevron {
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+  }
+
+  .schema-chevron.open {
+    transform: rotate(180deg);
+  }
+
+  .schema-dropdown-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+  }
+
+  .schema-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 8px;
+    right: 8px;
+    z-index: 100;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    max-height: 240px;
+    overflow-y: auto;
+    padding: 4px 0;
+  }
+
+  .schema-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .schema-option:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
+
+  .schema-option input[type="checkbox"] {
+    width: 13px;
+    height: 13px;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .schema-option-all {
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .schema-dropdown-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 4px 0;
   }
 </style>
