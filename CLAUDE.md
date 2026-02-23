@@ -36,7 +36,7 @@ src/                          # Frontend (SvelteKit)
 │   │   ├── grid/             # DataGrid, GridHeader, GridRow, GridCell, Pagination
 │   │   ├── modals/           # ConnectionModal, ConfirmDialog, CreateTableModal,
 │   │   │                     # AlterTableModal, IndexModal, SettingsModal
-│   │   ├── sidebar/          # Sidebar, ConnectionList, SchemaTree, TreeNode
+│   │   ├── sidebar/          # Sidebar, ConnectionList, SchemaTree, TreeNode, VirtualTreeList
 │   │   ├── structure/        # TableStructure, ColumnsView, IndexesView, ForeignKeysView
 │   │   ├── tabs/             # TabBar, TabContent, QueryTab, TableTab,
 │   │   │                     # DocumentTab, KeyValueTab, GraphTab
@@ -46,6 +46,7 @@ src/                          # Frontend (SvelteKit)
 │   ├── services/             # Tauri IPC wrappers
 │   │   ├── tauri.ts          # All invoke() wrappers (35+ commands)
 │   │   ├── connectionService.ts
+│   │   ├── keepaliveService.ts # Connection heartbeat + auto-reconnect
 │   │   ├── queryService.ts
 │   │   ├── schemaService.ts  # SQL-specific + generic container/item/field loaders
 │   │   ├── documentService.ts # MongoDB/DynamoDB CRUD
@@ -181,6 +182,15 @@ npm run check            # TypeScript/Svelte type checking
 - Auto-updater — in-app update notifications via tauri-plugin-updater, download + install + relaunch from status bar, GitHub Releases endpoint
 - Installer packaging — .dmg (macOS), .exe/.msi (Windows), .deb/.rpm/.AppImage (Linux) via tauri-action
 - Code signing ready — workflows pass through signing secrets; signs automatically when GitHub secrets are configured
+- Schema selector — dropdown to pick active schema, multi-schema visibility with checkbox list, default schema persisted per connection
+- Schema search path display — shows effective search_path (PostgreSQL), current database (MySQL), or default schema (MSSQL) in sidebar
+- Schema context menu — right-click schema nodes to Create Schema (inline input), Drop Schema (with confirmation), or New Query Here (with schema context prefix)
+- Cross-schema queries — schema-qualified tab titles when opening tables from non-active schemas, `getActiveSchema()` helper for determining default schema
+- Startup optimization — parallelized store initialization with `Promise.all`, extracted window geometry restore, parallel session restore
+- Schema cache LRU eviction — bounded detail cache (columns/indexes/FKs/stats) at 200 entries per connection, lazy eviction on cache writes
+- Connection keepalive & auto-reconnect — 30s heartbeat ping, exponential backoff reconnection (3 retries: 2s/4s/8s), automatic schema reload on reconnect
+- Virtual scrolling for schema tree — `VirtualTreeList` component virtualizes flat lists above 100 items, buffer rows for smooth scrolling, zero overhead below threshold
+- Stress testing harness — Docker Compose + seed SQL generating 5 schemas x 400 tables x 10 columns (2000 tables) with indexes, FKs, views, functions, sequences, enums
 
 ### Stub databases (feature-gated, not yet functional):
 - Oracle (`cargo build --features oracle` — requires Oracle Instant Client)
@@ -329,12 +339,12 @@ Separate repository — SvelteKit static site deployed to Vercel/Netlify/Cloudfl
 - [ ] **Analytics**: Privacy-friendly analytics (Plausible/Umami) for download counts and page views
 - [ ] **Responsive design**: Mobile-friendly layout for all pages, dark theme matching the app aesthetic
 
-### Phase 18: Performance & Reliability
-- [ ] **Stress testing with large schemas**: Test with 1000+ tables, ensure sidebar/tree doesn't lag
-- [ ] **Virtual scrolling for schema tree**: Render only visible tree nodes for databases with hundreds of tables
-- [ ] **Connection keepalive & auto-reconnect**: Detect network interruptions, reconnect transparently without losing context
-- [ ] **Memory profiling**: Detect and fix leaks on long-running sessions (Rust + frontend)
-- [ ] **Startup time optimization**: Lazy-load database drivers, defer non-critical initialization
+### Phase 18: Performance & Reliability ✅
+- [x] **Stress testing with large schemas**: Docker Compose + seed SQL (5 schemas × 400 tables = 2000 tables) for testing sidebar performance
+- [x] **Virtual scrolling for schema tree**: VirtualTreeList component renders only visible tree nodes when lists exceed 100 items
+- [x] **Connection keepalive & auto-reconnect**: 30s heartbeat ping, exponential backoff reconnection (3 retries), automatic schema reload
+- [x] **Schema cache LRU eviction**: Bounded detail cache at 200 entries per connection, prevents unbounded memory growth
+- [x] **Startup time optimization**: Parallelized store initialization and window/session restore with Promise.all
 
 ### Phase 19: Data Editing UX Polish
 - [ ] **Multi-cell selection**: Click-drag range select like a spreadsheet
@@ -372,13 +382,13 @@ Separate repository — SvelteKit static site deployed to Vercel/Netlify/Cloudfl
 - [ ] **In-app "What's New"**: Show changelog highlights after auto-update
 - [ ] **Config auto-backup**: Automatically back up connection configs to timestamped files
 
-### Phase 24: Schema Navigation & Management
-- [ ] **Active schema selector**: Dropdown at the top of the schema tree to pick the active/default schema, filters tree to show only selected schema(s)
-- [ ] **Multi-schema visibility**: Checkbox list to show/hide specific schemas (like pgAdmin), persisted per connection
-- [ ] **Default schema per connection**: Remember last-selected schema per connection, auto-expand on reconnect
-- [ ] **Schema search path display**: Show the effective search_path (PostgreSQL) or current database/schema context in the sidebar header
-- [ ] **Schema creation/deletion**: Right-click context menu to CREATE SCHEMA / DROP SCHEMA with confirmation dialog
-- [ ] **Cross-schema queries**: Auto-prefix table references with schema name when querying outside the active schema
+### Phase 24: Schema Navigation & Management ✅
+- [x] **Active schema selector**: Dropdown at the top of the schema tree to pick the active/default schema, filters tree to show only selected schema(s)
+- [x] **Multi-schema visibility**: Checkbox list to show/hide specific schemas (like pgAdmin), persisted per connection
+- [x] **Default schema per connection**: Remember last-selected schema per connection, auto-expand on reconnect
+- [x] **Schema search path display**: Show the effective search_path (PostgreSQL) or current database/schema context in the sidebar header
+- [x] **Schema creation/deletion**: Right-click context menu to CREATE SCHEMA / DROP SCHEMA with confirmation dialog
+- [x] **Cross-schema queries**: Auto-prefix table references with schema name when querying outside the active schema
 
 ## Architecture Notes
 

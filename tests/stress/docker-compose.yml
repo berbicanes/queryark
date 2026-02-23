@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    ports:
+      - "5499:5432"
+    environment:
+      POSTGRES_USER: stresstest
+      POSTGRES_PASSWORD: stresstest
+      POSTGRES_DB: stressdb
+    volumes:
+      - ./seed.sql:/docker-entrypoint-initdb.d/seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stresstest -d stressdb"]
+      interval: 2s
+      timeout: 5s
+      retries: 10

@@ -4,6 +4,7 @@ import { tabStore } from '$lib/stores/tabs.svelte';
 import { uiStore } from '$lib/stores/ui.svelte';
 import { settingsStore } from '$lib/stores/settings.svelte';
 import * as tauri from '$lib/services/tauri';
+import { startKeepalive, stopKeepalive } from '$lib/services/keepaliveService';
 import type { ConnectionConfig, DatabaseCategory } from '$lib/types/connection';
 import { DB_METADATA } from '$lib/types/database';
 
@@ -14,6 +15,7 @@ export async function connect(config: ConnectionConfig) {
     connectionStore.setStatus(config.id, 'connected');
     connectionStore.setActive(config.id);
     settingsStore.setLastActiveConnectionId(config.id);
+    startKeepalive(config.id);
 
     // Load schema based on database category
     const meta = DB_METADATA[config.db_type];
@@ -37,6 +39,7 @@ export async function connect(config: ConnectionConfig) {
 
 export async function disconnect(connectionId: string) {
   try {
+    stopKeepalive(connectionId);
     await tauri.disconnectDb(connectionId);
     connectionStore.setStatus(connectionId, 'disconnected');
     schemaStore.clearConnection(connectionId);

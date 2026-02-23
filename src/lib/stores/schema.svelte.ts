@@ -39,6 +39,42 @@ class SchemaStore {
   lastRefreshed = $state<Record<string, number>>({}); // connectionId -> timestamp
   visibleSchemas = $state<Record<string, string[] | null>>({}); // connectionId -> visible schema names (null = show all)
 
+  // LRU eviction for table detail cache (columns, indexes, FKs, stats)
+  private detailAccessOrder = new Map<string, number>(); // "connId:schema.table" -> timestamp
+  private MAX_DETAIL_ENTRIES = 200;
+
+  private touchDetail(connectionId: string, schemaName: string, tableName: string) {
+    const key = `${connectionId}:${schemaName}.${tableName}`;
+    this.detailAccessOrder.set(key, Date.now());
+  }
+
+  private evictStaleDetails(connectionId: string) {
+    // Count entries for this connection
+    const prefix = `${connectionId}:`;
+    const entries: [string, number][] = [];
+    for (const [key, ts] of this.detailAccessOrder) {
+      if (key.startsWith(prefix)) {
+        entries.push([key, ts]);
+      }
+    }
+    if (entries.length <= this.MAX_DETAIL_ENTRIES) return;
+
+    // Sort by timestamp ascending (oldest first), evict excess
+    entries.sort((a, b) => a[1] - b[1]);
+    const toEvict = entries.slice(0, entries.length - this.MAX_DETAIL_ENTRIES);
+    const cache = this.cache[connectionId];
+    if (!cache) return;
+
+    for (const [fullKey] of toEvict) {
+      const tableKey = fullKey.slice(prefix.length); // "schema.table"
+      delete cache.columns[tableKey];
+      delete cache.indexes[tableKey];
+      delete cache.foreignKeys[tableKey];
+      delete cache.tableStats[tableKey];
+      this.detailAccessOrder.delete(fullKey);
+    }
+  }
+
   // SQL-specific getters
   getSchemas(connectionId: string): SchemaInfo[] {
     return this.cache[connectionId]?.schemas ?? [];
@@ -50,22 +86,30 @@ class SchemaStore {
 
   getColumns(connectionId: string, schemaName: string, tableName: string): ColumnInfo[] {
     const key = `${schemaName}.${tableName}`;
-    return this.cache[connectionId]?.columns[key] ?? [];
+    const result = this.cache[connectionId]?.columns[key];
+    if (result) this.touchDetail(connectionId, schemaName, tableName);
+    return result ?? [];
   }
 
   getIndexes(connectionId: string, schemaName: string, tableName: string): IndexInfo[] {
     const key = `${schemaName}.${tableName}`;
-    return this.cache[connectionId]?.indexes[key] ?? [];
+    const result = this.cache[connectionId]?.indexes[key];
+    if (result) this.touchDetail(connectionId, schemaName, tableName);
+    return result ?? [];
   }
 
   getForeignKeys(connectionId: string, schemaName: string, tableName: string): ForeignKeyInfo[] {
     const key = `${schemaName}.${tableName}`;
-    return this.cache[connectionId]?.foreignKeys[key] ?? [];
+    const result = this.cache[connectionId]?.foreignKeys[key];
+    if (result) this.touchDetail(connectionId, schemaName, tableName);
+    return result ?? [];
   }
 
   getTableStats(connectionId: string, schemaName: string, tableName: string): TableStats | null {
     const key = `${schemaName}.${tableName}`;
-    return this.cache[connectionId]?.tableStats[key] ?? null;
+    const result = this.cache[connectionId]?.tableStats[key];
+    if (result) this.touchDetail(connectionId, schemaName, tableName);
+    return result ?? null;
   }
 
   getRoutines(connectionId: string, schemaName: string): RoutineInfo[] {
@@ -100,6 +144,8 @@ class SchemaStore {
       this.cache[connectionId] = emptySchemaCache();
     }
     this.cache[connectionId].columns[`${schemaName}.${tableName}`] = columns;
+    this.touchDetail(connectionId, schemaName, tableName);
+    this.evictStaleDetails(connectionId);
   }
 
   setIndexes(connectionId: string, schemaName: string, tableName: string, indexes: IndexInfo[]) {
@@ -107,6 +153,8 @@ class SchemaStore {
       this.cache[connectionId] = emptySchemaCache();
     }
     this.cache[connectionId].indexes[`${schemaName}.${tableName}`] = indexes;
+    this.touchDetail(connectionId, schemaName, tableName);
+    this.evictStaleDetails(connectionId);
   }
 
   setForeignKeys(connectionId: string, schemaName: string, tableName: string, fks: ForeignKeyInfo[]) {
@@ -114,6 +162,8 @@ class SchemaStore {
       this.cache[connectionId] = emptySchemaCache();
     }
     this.cache[connectionId].foreignKeys[`${schemaName}.${tableName}`] = fks;
+    this.touchDetail(connectionId, schemaName, tableName);
+    this.evictStaleDetails(connectionId);
   }
 
   setTableStats(connectionId: string, schemaName: string, tableName: string, stats: TableStats) {
@@ -121,6 +171,8 @@ class SchemaStore {
       this.cache[connectionId] = emptySchemaCache();
     }
     this.cache[connectionId].tableStats[`${schemaName}.${tableName}`] = stats;
+    this.touchDetail(connectionId, schemaName, tableName);
+    this.evictStaleDetails(connectionId);
   }
 
   setRoutines(connectionId: string, schemaName: string, routines: RoutineInfo[]) {
@@ -263,6 +315,13 @@ class SchemaStore {
     delete this.browserCache[connectionId];
     delete this.lastRefreshed[connectionId];
     delete this.visibleSchemas[connectionId];
+    // Clear LRU entries for this connection
+    const prefix = `${connectionId}:`;
+    for (const key of this.detailAccessOrder.keys()) {
+      if (key.startsWith(prefix)) {
+        this.detailAccessOrder.delete(key);
+      }
+    }
   }
 }
 

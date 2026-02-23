@@ -36,6 +36,10 @@ pub enum AppError {
 
     #[error("Keychain error: {0}")]
     Keychain(String),
+
+    #[allow(dead_code)]
+    #[error("Connection lost: {0}")]
+    ConnectionLost(String),
 }
 
 impl AppError {
@@ -51,6 +55,7 @@ impl AppError {
             AppError::ConnectionFailed { .. } => "CONNECTION_FAILED",
             AppError::SshTunnel(_) => "SSH_TUNNEL_ERROR",
             AppError::Keychain(_) => "KEYCHAIN_ERROR",
+            AppError::ConnectionLost(_) => "CONNECTION_LOST",
         }
     }
 }

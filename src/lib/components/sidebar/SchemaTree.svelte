@@ -12,8 +12,9 @@
   import type { DatabaseCategory, DatabaseType } from '$lib/types/connection';
   import type { TabType } from '$lib/types/tabs';
   import TreeNode from './TreeNode.svelte';
+  import VirtualTreeList from './VirtualTreeList.svelte';
 
-  let { connectionId }: { connectionId: string } = $props();
+  let { connectionId, scrollContainer }: { connectionId: string; scrollContainer?: HTMLElement } = $props();
 
   // Determine the database category for this connection
   let dbCategory = $derived.by(() => {
@@ -603,34 +604,36 @@
                   onexpand={(exp) => handleCategoryExpand(schema.name, 'tables', exp)}
                 >
                   {#snippet children()}
-                    {#each filteredTables as table}
-                      <TreeNode
-                        label={table.name}
-                        icon={ICON_TABLE}
-                        expandable={true}
-                        depth={2}
-                        tooltip={getTableTooltip(schema.name, table.name)}
-                        suffix={getTableSuffix(schema.name, table.name)}
-                        onexpand={(exp) => handleTableExpand(schema.name, table.name, exp)}
-                        ondblclick={() => handleTableDblClick(schema.name, table.name)}
-                      >
-                        {#snippet children()}
-                          {#each getColumns(schema.name, table.name) as column}
-                            <TreeNode
-                              label={column.name}
-                              icon={column.is_primary_key ? ICON_KEY : getColumnTypeIcon(column.data_type)}
-                              expandable={false}
-                              depth={3}
-                              tooltip={column.data_type}
-                            >
-                              {#snippet children()}
-                                <!-- leaf node -->
-                              {/snippet}
-                            </TreeNode>
-                          {/each}
-                        {/snippet}
-                      </TreeNode>
-                    {/each}
+                    <VirtualTreeList items={filteredTables} {scrollContainer}>
+                      {#snippet children(table: TableInfo)}
+                        <TreeNode
+                          label={table.name}
+                          icon={ICON_TABLE}
+                          expandable={true}
+                          depth={2}
+                          tooltip={getTableTooltip(schema.name, table.name)}
+                          suffix={getTableSuffix(schema.name, table.name)}
+                          onexpand={(exp) => handleTableExpand(schema.name, table.name, exp)}
+                          ondblclick={() => handleTableDblClick(schema.name, table.name)}
+                        >
+                          {#snippet children()}
+                            {#each getColumns(schema.name, table.name) as column}
+                              <TreeNode
+                                label={column.name}
+                                icon={column.is_primary_key ? ICON_KEY : getColumnTypeIcon(column.data_type)}
+                                expandable={false}
+                                depth={3}
+                                tooltip={column.data_type}
+                              >
+                                {#snippet children()}
+                                  <!-- leaf node -->
+                                {/snippet}
+                              </TreeNode>
+                            {/each}
+                          {/snippet}
+                        </TreeNode>
+                      {/snippet}
+                    </VirtualTreeList>
                   {/snippet}
                 </TreeNode>
               {/if}
@@ -647,32 +650,34 @@
                   onexpand={(exp) => handleCategoryExpand(schema.name, 'views', exp)}
                 >
                   {#snippet children()}
-                    {#each filteredViews as view}
-                      <TreeNode
-                        label={view.name}
-                        icon={ICON_VIEW}
-                        expandable={true}
-                        depth={2}
-                        onexpand={(exp) => handleTableExpand(schema.name, view.name, exp)}
-                        ondblclick={() => handleTableDblClick(schema.name, view.name)}
-                      >
-                        {#snippet children()}
-                          {#each getColumns(schema.name, view.name) as column}
-                            <TreeNode
-                              label={column.name}
-                              icon={column.is_primary_key ? ICON_KEY : getColumnTypeIcon(column.data_type)}
-                              expandable={false}
-                              depth={3}
-                              tooltip={column.data_type}
-                            >
-                              {#snippet children()}
-                                <!-- leaf node -->
-                              {/snippet}
-                            </TreeNode>
-                          {/each}
-                        {/snippet}
-                      </TreeNode>
-                    {/each}
+                    <VirtualTreeList items={filteredViews} {scrollContainer}>
+                      {#snippet children(view: TableInfo)}
+                        <TreeNode
+                          label={view.name}
+                          icon={ICON_VIEW}
+                          expandable={true}
+                          depth={2}
+                          onexpand={(exp) => handleTableExpand(schema.name, view.name, exp)}
+                          ondblclick={() => handleTableDblClick(schema.name, view.name)}
+                        >
+                          {#snippet children()}
+                            {#each getColumns(schema.name, view.name) as column}
+                              <TreeNode
+                                label={column.name}
+                                icon={column.is_primary_key ? ICON_KEY : getColumnTypeIcon(column.data_type)}
+                                expandable={false}
+                                depth={3}
+                                tooltip={column.data_type}
+                              >
+                                {#snippet children()}
+                                  <!-- leaf node -->
+                                {/snippet}
+                              </TreeNode>
+                            {/each}
+                          {/snippet}
+                        </TreeNode>
+                      {/snippet}
+                    </VirtualTreeList>
                   {/snippet}
                 </TreeNode>
               {/if}
@@ -690,19 +695,21 @@
                     onexpand={(exp) => handleCategoryExpand(schema.name, 'routines', exp)}
                   >
                     {#snippet children()}
-                      {#each routines as routine}
-                        <TreeNode
-                          label={routine.name}
-                          icon={routine.routine_type === 'PROCEDURE' ? 'P' : 'f'}
-                          expandable={false}
-                          depth={2}
-                          tooltip={`${routine.routine_type}${routine.return_type ? ' → ' + routine.return_type : ''}`}
-                        >
-                          {#snippet children()}
-                            <!-- leaf node -->
-                          {/snippet}
-                        </TreeNode>
-                      {/each}
+                      <VirtualTreeList items={routines} {scrollContainer}>
+                        {#snippet children(routine: RoutineInfo)}
+                          <TreeNode
+                            label={routine.name}
+                            icon={routine.routine_type === 'PROCEDURE' ? 'P' : 'f'}
+                            expandable={false}
+                            depth={2}
+                            tooltip={`${routine.routine_type}${routine.return_type ? ' → ' + routine.return_type : ''}`}
+                          >
+                            {#snippet children()}
+                              <!-- leaf node -->
+                            {/snippet}
+                          </TreeNode>
+                        {/snippet}
+                      </VirtualTreeList>
                     {/snippet}
                   </TreeNode>
                 {/if}
@@ -721,19 +728,21 @@
                     onexpand={(exp) => handleCategoryExpand(schema.name, 'sequences', exp)}
                   >
                     {#snippet children()}
-                      {#each sequences as seq}
-                        <TreeNode
-                          label={seq.name}
-                          icon={ICON_SEQUENCE}
-                          expandable={false}
-                          depth={2}
-                          tooltip={seq.data_type ?? ''}
-                        >
-                          {#snippet children()}
-                            <!-- leaf node -->
-                          {/snippet}
-                        </TreeNode>
-                      {/each}
+                      <VirtualTreeList items={sequences} {scrollContainer}>
+                        {#snippet children(seq: SequenceInfo)}
+                          <TreeNode
+                            label={seq.name}
+                            icon={ICON_SEQUENCE}
+                            expandable={false}
+                            depth={2}
+                            tooltip={seq.data_type ?? ''}
+                          >
+                            {#snippet children()}
+                              <!-- leaf node -->
+                            {/snippet}
+                          </TreeNode>
+                        {/snippet}
+                      </VirtualTreeList>
                     {/snippet}
                   </TreeNode>
                 {/if}
@@ -752,19 +761,21 @@
                     onexpand={(exp) => handleCategoryExpand(schema.name, 'enums', exp)}
                   >
                     {#snippet children()}
-                      {#each enums as en}
-                        <TreeNode
-                          label={en.name}
-                          icon={ICON_ENUM}
-                          expandable={false}
-                          depth={2}
-                          tooltip={en.variants.join(', ')}
-                        >
-                          {#snippet children()}
-                            <!-- leaf node -->
-                          {/snippet}
-                        </TreeNode>
-                      {/each}
+                      <VirtualTreeList items={enums} {scrollContainer}>
+                        {#snippet children(en: EnumInfo)}
+                          <TreeNode
+                            label={en.name}
+                            icon={ICON_ENUM}
+                            expandable={false}
+                            depth={2}
+                            tooltip={en.variants.join(', ')}
+                          >
+                            {#snippet children()}
+                              <!-- leaf node -->
+                            {/snippet}
+                          </TreeNode>
+                        {/snippet}
+                      </VirtualTreeList>
                     {/snippet}
                   </TreeNode>
                 {/if}
@@ -792,31 +803,33 @@
             onexpand={(exp) => handleContainerExpand(container, exp)}
           >
             {#snippet children()}
-              {#each filteredItems as item}
-                <TreeNode
-                  label={item.name}
-                  icon={ICON_TABLE}
-                  expandable={true}
-                  depth={1}
-                  onexpand={(exp) => handleItemExpand(container.name, item.name, exp)}
-                  ondblclick={() => handleItemDblClick(container.name, item.name)}
-                >
-                  {#snippet children()}
-                    {#each getFields(container.name, item.name) as field}
-                      <TreeNode
-                        label={field.name}
-                        icon={getFieldIcon(field)}
-                        expandable={false}
-                        depth={2}
-                      >
-                        {#snippet children()}
-                          <!-- leaf node -->
-                        {/snippet}
-                      </TreeNode>
-                    {/each}
-                  {/snippet}
-                </TreeNode>
-              {/each}
+              <VirtualTreeList items={filteredItems} {scrollContainer}>
+                {#snippet children(item: ItemInfo)}
+                  <TreeNode
+                    label={item.name}
+                    icon={ICON_TABLE}
+                    expandable={true}
+                    depth={1}
+                    onexpand={(exp) => handleItemExpand(container.name, item.name, exp)}
+                    ondblclick={() => handleItemDblClick(container.name, item.name)}
+                  >
+                    {#snippet children()}
+                      {#each getFields(container.name, item.name) as field}
+                        <TreeNode
+                          label={field.name}
+                          icon={getFieldIcon(field)}
+                          expandable={false}
+                          depth={2}
+                        >
+                          {#snippet children()}
+                            <!-- leaf node -->
+                          {/snippet}
+                        </TreeNode>
+                      {/each}
+                    {/snippet}
+                  </TreeNode>
+                {/snippet}
+              </VirtualTreeList>
             {/snippet}
           </TreeNode>
         {/if}

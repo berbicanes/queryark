@@ -48,17 +48,7 @@
     window.removeEventListener('queryark:refresh-schema', handleSchemaRefresh);
   });
 
-  onMount(async () => {
-    await connectionStore.init();
-    queryHistoryStore.init();
-    savedQueriesStore.init();
-    await settingsStore.init();
-
-    // Restore sidebar width from settings, but start collapsed for home screen
-    uiStore.sidebarWidth = settingsStore.sidebarWidth;
-    uiStore.sidebarCollapsed = true;
-
-    // Restore window geometry
+  async function restoreWindowGeometry() {
     try {
       const { getCurrentWindow } = await import('@tauri-apps/api/window');
       const { LogicalSize, LogicalPosition } = await import('@tauri-apps/api/dpi');
@@ -97,29 +87,45 @@
     } catch {
       // Not running in Tauri (e.g. dev server in browser)
     }
+  }
 
-    // Check for updates after a short delay
-    setTimeout(() => checkForUpdates(), 5000);
+  async function restoreSession() {
+    if (!settingsStore.restoreSession) return;
+    await tabStore.init();
 
-    // Session restore: reopen tabs and reconnect
-    if (settingsStore.restoreSession) {
-      await tabStore.init();
-
-      if (settingsStore.lastActiveConnectionId) {
-        const conn = connectionStore.connections.find(
-          c => c.config.id === settingsStore.lastActiveConnectionId
-        );
-        if (conn && conn.status !== 'connected') {
-          // Silently attempt reconnection
-          connectionService.connect(conn.config).catch(() => {});
-        }
+    if (settingsStore.lastActiveConnectionId) {
+      const conn = connectionStore.connections.find(
+        c => c.config.id === settingsStore.lastActiveConnectionId
+      );
+      if (conn && conn.status !== 'connected') {
+        // Silently attempt reconnection
+        connectionService.connect(conn.config).catch(() => {});
       }
     }
+  }
 
-    // Listen for schema refresh events from CommandPalette
+  onMount(async () => {
+    // Phase 1: Initialize all stores in parallel
+    await Promise.all([
+      connectionStore.init(),
+      settingsStore.init(),
+      queryHistoryStore.init(),
+      savedQueriesStore.init(),
+    ]);
+
+    // Phase 2: Apply settings (depends on settingsStore)
+    uiStore.sidebarWidth = settingsStore.sidebarWidth;
+    uiStore.sidebarCollapsed = true;
+
+    // Phase 3: Window geometry + session restore in parallel
+    await Promise.all([
+      restoreWindowGeometry(),
+      restoreSession(),
+    ]);
+
+    // Phase 4: Event listeners, update check, mark startup complete
     window.addEventListener('queryark:refresh-schema', handleSchemaRefresh);
-
-    // Mark startup complete — effects below now respond to user actions only
+    setTimeout(() => checkForUpdates(), 5000);
     startupComplete = true;
   });
 

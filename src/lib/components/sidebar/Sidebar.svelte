@@ -10,6 +10,7 @@
   let isResizing = $state(false);
   let startX = $state(0);
   let startWidth = $state(0);
+  let scrollContainer: HTMLElement | undefined = $state();
 
   let activeConnection = $derived(connectionStore.activeConnection);
   let isConnected = $derived(activeConnection?.status === 'connected');
@@ -115,7 +116,7 @@
     </button>
   </div>
 
-  <div class="sidebar-content">
+  <div class="sidebar-content" bind:this={scrollContainer}>
     <ConnectionList />
 
     {#if isConnected && connectionStore.activeConnectionId}
@@ -142,7 +143,7 @@
             {pathLabel}: {searchPath}
           </div>
         {/if}
-        <SchemaTree connectionId={connectionStore.activeConnectionId} />
+        <SchemaTree connectionId={connectionStore.activeConnectionId} {scrollContainer} />
       </div>
     {/if}
   </div>
