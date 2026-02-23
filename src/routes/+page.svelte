@@ -37,6 +37,7 @@
   import WorkspaceModal from '$lib/components/modals/WorkspaceModal.svelte';
   import ParameterPrompt from '$lib/components/modals/ParameterPrompt.svelte';
   import WhatsNewModal from '$lib/components/modals/WhatsNewModal.svelte';
+  import DatabaseBackupModal from '$lib/components/modals/DatabaseBackupModal.svelte';
   import { initSentry } from '$lib/services/sentryService';
   import { initTelemetry, trackEvent } from '$lib/services/telemetryService';
   import * as backupService from '$lib/services/backupService';
@@ -392,6 +393,10 @@
 
 {#if uiStore.showWhatsNewModal}
   <WhatsNewModal />
+{/if}
+
+{#if uiStore.showDatabaseBackupModal}
+  <DatabaseBackupModal />
 {/if}
 
 {#if uiStore.errorMessage}

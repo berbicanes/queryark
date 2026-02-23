@@ -34,6 +34,19 @@
     }
     uiStore.dismissHome();
   }
+
+  let hasConnectedSqlDbs = $derived(
+    connectionStore.connections.some(c => {
+      if (c.status !== 'connected') return false;
+      const cat = DB_METADATA[c.config.db_type]?.category;
+      return cat === 'Relational' || cat === 'Analytics' || cat === 'WideColumn';
+    })
+  );
+
+  function handleBackupDatabase() {
+    uiStore.databaseBackupConnectionId = null;
+    uiStore.showDatabaseBackupModal = true;
+  }
 </script>
 
 <div class="welcome-screen">
@@ -80,6 +93,20 @@
           </svg>
           <span class="dashboard-title">QueryArk</span>
           <span class="dashboard-subtitle">Your Connections</span>
+        </div>
+        <div class="dashboard-actions">
+          <button
+            class="action-btn"
+            onclick={handleBackupDatabase}
+            disabled={!hasConnectedSqlDbs}
+            title={hasConnectedSqlDbs ? 'Backup a connected database to a .sql file' : 'Connect to a SQL database first'}
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+              <path d="M8 10V2M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+            Backup Database
+          </button>
         </div>
       </div>
 
@@ -267,7 +294,9 @@
   .dashboard-header {
     display: flex;
     align-items: center;
-    gap: 12px;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 32px;
   }
 
   .dashboard-brand {
@@ -290,6 +319,38 @@
     border-left: 1px solid var(--border-color);
     padding-left: 12px;
     margin-left: 4px;
+  }
+
+  .dashboard-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    background: var(--bg-tertiary, var(--bg-secondary));
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: background var(--transition-subtle, 150ms ease), border-color var(--transition-subtle, 150ms ease);
+  }
+
+  .action-btn:hover:not(:disabled) {
+    background: var(--bg-hover);
+    border-color: var(--accent);
+  }
+
+  .action-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
   }
 
   .cards-area {

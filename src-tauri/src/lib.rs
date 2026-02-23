@@ -85,6 +85,8 @@ pub fn run() {
             commands::export::export_to_sql,
             commands::export::export_ddl,
             commands::export::import_csv,
+            // Database dump
+            commands::dump::dump_database,
             // Backup/Restore
             commands::backup::backup_configs,
             commands::backup::list_backups,

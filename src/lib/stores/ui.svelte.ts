@@ -66,6 +66,10 @@ class UiStore {
   // Phase 23 — Quality & Trust
   showWhatsNewModal = $state(false);
 
+  // Database backup/dump
+  showDatabaseBackupModal = $state(false);
+  databaseBackupConnectionId = $state<string | null>(null);
+
   // Phase 22 — Advanced Query Features
   showParameterPrompt = $state(false);
   parameterPromptSql = $state('');

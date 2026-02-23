@@ -119,6 +119,14 @@
     }
   }
 
+  function ctxBackupDatabase() {
+    if (contextMenu) {
+      uiStore.databaseBackupConnectionId = contextMenu.connection.config.id;
+      uiStore.showDatabaseBackupModal = true;
+      closeContextMenu();
+    }
+  }
+
   async function ctxExportConnection() {
     if (!contextMenu) return;
     const config = contextMenu.connection.config;
@@ -264,6 +272,16 @@
         </svg>
         Disconnect
       </button>
+      {@const category = DB_METADATA[contextMenu.connection.config.db_type]?.category}
+      {#if category === 'Relational' || category === 'Analytics' || category === 'WideColumn'}
+        <button class="context-item" onclick={ctxBackupDatabase}>
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+            <path d="M8 10V2M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+          Backup Database
+        </button>
+      {/if}
     {/if}
     <button class="context-item" onclick={ctxEdit}>
       <svg width="12" height="12" viewBox="0 0 16 16" fill="none">

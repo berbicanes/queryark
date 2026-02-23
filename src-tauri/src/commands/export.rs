@@ -28,7 +28,7 @@ fn cell_value_to_string(cell: &CellValue) -> String {
     }
 }
 
-fn cell_value_to_sql_literal(cell: &CellValue) -> String {
+pub(crate) fn cell_value_to_sql_literal(cell: &CellValue) -> String {
     match cell {
         CellValue::Null => "NULL".to_string(),
         CellValue::Bool(v) => if *v { "TRUE".to_string() } else { "FALSE".to_string() },
@@ -68,7 +68,7 @@ fn cell_value_to_json(cell: &CellValue) -> serde_json::Value {
     }
 }
 
-fn generate_create_table(
+pub(crate) fn generate_create_table(
     schema: &str,
     table: &str,
     columns: &[ColumnInfo],

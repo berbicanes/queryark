@@ -1,6 +1,7 @@
 pub mod backup;
 pub mod connection;
 pub mod document;
+pub mod dump;
 pub mod export;
 pub mod graph;
 pub mod keychain;

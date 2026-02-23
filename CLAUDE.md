@@ -35,7 +35,8 @@ src/                          # Frontend (SvelteKit)
 │   │   ├── editor/           # SqlEditor (CodeMirror, multi-dialect)
 │   │   ├── grid/             # DataGrid, GridHeader, GridRow, GridCell, Pagination
 │   │   ├── modals/           # ConnectionModal, ConfirmDialog, CreateTableModal,
-│   │   │                     # AlterTableModal, IndexModal, SettingsModal
+│   │   │                     # AlterTableModal, IndexModal, SettingsModal,
+│   │   │                     # DatabaseBackupModal
 │   │   ├── sidebar/          # Sidebar, ConnectionList, SchemaTree, TreeNode, VirtualTreeList
 │   │   ├── structure/        # TableStructure, ColumnsView, IndexesView, ForeignKeysView
 │   │   ├── tabs/             # TabBar, TabContent, QueryTab, TableTab,
@@ -61,7 +62,8 @@ src/                          # Frontend (SvelteKit)
 │   │   ├── graphService.ts   # Neo4j browsing
 │   │   ├── sentryService.ts  # Sentry crash reporting init + error capture
 │   │   ├── telemetryService.ts # Lightweight anonymous event tracking
-│   │   └── backupService.ts  # Config backup/restore/list/delete wrappers
+│   │   ├── backupService.ts  # Config backup/restore/list/delete wrappers
+│   │   └── dumpService.ts   # Database dump IPC wrappers + file dialog + progress events
 │   ├── stores/               # Svelte 5 rune stores (connections, tabs, schema, ui,
 │   │                         # transaction, changeTracker)
 │   ├── types/
@@ -91,6 +93,7 @@ src-tauri/                    # Backend (Rust)
 │   │   │                     # SQL: get_schemas, get_tables, get_columns, get_indexes,
 │   │   │                     #   get_foreign_keys, get_table_data, get_row_count,
 │   │   │                     #   update_cell, insert_row, delete_rows
+│   │   ├── dump.rs           # dump_database (full database backup to .sql file)
 │   │   ├── transaction.rs    # begin_transaction, commit_transaction, rollback_transaction
 │   │   ├── document.rs       # insert_document, update_document, delete_documents
 │   │   ├── keyvalue.rs       # get_value, set_value, delete_keys, get_key_type, scan_keys
@@ -120,7 +123,7 @@ src-tauri/                    # Backend (Rust)
 │   │       ├── oracle.rs     # Oracle (stub, feature-gated)
 │   │       ├── snowflake.rs  # Snowflake (stub, feature-gated)
 │   │       └── bigquery.rs   # BigQuery (stub, feature-gated)
-│   ├── models/               # Serde structs (connection, query, schema, backup)
+│   ├── models/               # Serde structs (connection, query, schema, backup, dump)
 │   ├── error.rs              # AppError enum
 │   ├── lib.rs                # Tauri app builder + command registration (35+ commands)
 │   └── main.rs               # Entry point
@@ -232,6 +235,7 @@ npm run check            # TypeScript/Svelte type checking
 - Anonymous telemetry — lightweight custom fetch-based event tracking (app_launch, connection_created, query_executed), opt-out by default
 - In-app "What's New" — changelog modal shown after auto-update with version-grouped highlights, accessible from About screen
 - Config auto-backup — automatic daily backup of connections.json + settings.json to timestamped files, restore/delete UI in Settings, max 10 backups retained
+- Database backup/dump — right-click connection to generate a full `.sql` dump file (DDL + INSERT data) for SQL databases, with schema selection, data toggle, live progress bar via Tauri events, file size reporting
 - E2E test scaffolding — Playwright tests with mock Tauri IPC layer, Docker Compose multi-DB (PostgreSQL, MySQL, Redis, MongoDB)
 
 ### Stub databases (feature-gated, not yet functional):
