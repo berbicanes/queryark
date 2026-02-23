@@ -7,6 +7,15 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '0.2.1',
+    date: '2026-02-23',
+    highlights: [
+      'Add product website with automated deployment',
+      'Fix release workflow permissions',
+    ],
+    category: 'fix',
+  },
+  {
     version: '0.2.0',
     date: '2026-02-23',
     highlights: [
