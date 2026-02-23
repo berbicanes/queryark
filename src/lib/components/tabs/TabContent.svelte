@@ -5,6 +5,10 @@
   import DocumentTab from './DocumentTab.svelte';
   import KeyValueTab from './KeyValueTab.svelte';
   import GraphTab from './GraphTab.svelte';
+  import DiagramTab from './DiagramTab.svelte';
+  import TableDiffTab from './TableDiffTab.svelte';
+  import DataDiffTab from './DataDiffTab.svelte';
+  import VisualQueryTab from './VisualQueryTab.svelte';
 
   let { onqueryresult, paneId }: {
     onqueryresult?: (detail: { executionTime: number; rowCount: number }) => void;
@@ -44,6 +48,22 @@
   {:else if activeTab.type === 'graph'}
     {#key activeTab.id}
       <GraphTab tab={activeTab} />
+    {/key}
+  {:else if activeTab.type === 'diagram'}
+    {#key activeTab.id}
+      <DiagramTab tab={activeTab} />
+    {/key}
+  {:else if activeTab.type === 'tablediff'}
+    {#key activeTab.id}
+      <TableDiffTab tab={activeTab} />
+    {/key}
+  {:else if activeTab.type === 'datadiff'}
+    {#key activeTab.id}
+      <DataDiffTab tab={activeTab} />
+    {/key}
+  {:else if activeTab.type === 'visualquery'}
+    {#key activeTab.id}
+      <VisualQueryTab tab={activeTab} {onqueryresult} />
     {/key}
   {/if}
 </div>

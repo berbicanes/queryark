@@ -97,6 +97,20 @@ class TabStore {
       }
     }
 
+    // Dedup diagram tabs by connection + sorted schemas
+    if (tab.type === 'diagram') {
+      const sortedSchemas = [...(tab.diagramSchemas ?? [])].sort().join(',');
+      const existing = this.tabs.find(
+        t => t.type === 'diagram' && t.connectionId === tab.connectionId &&
+             [...(t.diagramSchemas ?? [])].sort().join(',') === sortedSchemas
+      );
+      if (existing) {
+        this.activeTabId = existing.id;
+        if (this.splitMode) this._focusTabInPane(existing.id);
+        return existing.id;
+      }
+    }
+
     const id = uuidv4();
     const newTab: Tab = { ...tab, id };
     this.tabs.push(newTab);

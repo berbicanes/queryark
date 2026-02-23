@@ -470,6 +470,18 @@
     }
   }
 
+  function ctxShowDiagram() {
+    if (!schemaContextMenu) return;
+    const schema = schemaContextMenu.schemaName;
+    closeSchemaContextMenu();
+    tabStore.openTab({
+      type: 'diagram',
+      title: `ER: ${schema}`,
+      connectionId,
+      diagramSchemas: [schema],
+    });
+  }
+
   function ctxDropSchema() {
     if (!schemaContextMenu) return;
     const schema = schemaContextMenu.schemaName;
@@ -864,6 +876,15 @@
         <path d="M6 8h4M6 11h4" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
       </svg>
       New Query Here
+    </button>
+    <button class="context-item" onclick={ctxShowDiagram}>
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+        <rect x="1" y="1" width="5" height="4" rx="1" stroke="currentColor" stroke-width="1.2" fill="none"/>
+        <rect x="10" y="1" width="5" height="4" rx="1" stroke="currentColor" stroke-width="1.2" fill="none"/>
+        <rect x="5.5" y="11" width="5" height="4" rx="1" stroke="currentColor" stroke-width="1.2" fill="none"/>
+        <path d="M3.5 5v3h5v-3M8 8v3" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+      </svg>
+      Show ER Diagram
     </button>
     <div class="context-divider"></div>
     <button class="context-item" onclick={ctxCreateSchema}>

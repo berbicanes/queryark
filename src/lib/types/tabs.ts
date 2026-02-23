@@ -1,4 +1,5 @@
-export type TabType = 'query' | 'table' | 'document' | 'keyvalue' | 'graph';
+export type TabType = 'query' | 'table' | 'document' | 'keyvalue' | 'graph'
+  | 'diagram' | 'tablediff' | 'datadiff' | 'visualquery';
 
 export interface Tab {
   id: string;
@@ -14,4 +15,9 @@ export interface Tab {
   // For generic browsing
   container?: string;
   item?: string;
+  // Phase 20: Visual database tools
+  diagramSchemas?: string[];
+  diffTargetConnectionId?: string;
+  diffTargetSchema?: string;
+  diffTargetTable?: string;
 }

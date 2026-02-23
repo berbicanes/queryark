@@ -18,6 +18,10 @@ export const DEFAULT_SHORTCUTS: ShortcutAction[] = [
   { id: 'refreshSchema', label: 'Refresh Schema', category: 'General', defaultKey: 'F5' },
   { id: 'toggleTheme', label: 'Toggle Theme', category: 'General', defaultKey: 'Ctrl+Shift+T' },
   { id: 'shortcuts', label: 'Keyboard Shortcuts', category: 'General', defaultKey: 'Ctrl+K' },
+  { id: 'openDiagram', label: 'Open ER Diagram', category: 'General', defaultKey: '' },
+  { id: 'openTableDiff', label: 'Table Structure Diff', category: 'General', defaultKey: '' },
+  { id: 'openDataDiff', label: 'Data Diff', category: 'General', defaultKey: '' },
+  { id: 'openVisualQuery', label: 'Visual Query Builder', category: 'General', defaultKey: '' },
 ];
 
 export type ShortcutId = typeof DEFAULT_SHORTCUTS[number]['id'];

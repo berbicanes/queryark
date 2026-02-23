@@ -138,6 +138,43 @@
       refreshSchema: () => {
         window.dispatchEvent(new CustomEvent('queryark:refresh-schema'));
       },
+      openDiagram: () => {
+        if (connectionStore.activeConnectionId) {
+          tabStore.openTab({
+            type: 'diagram',
+            title: 'ER Diagram',
+            connectionId: connectionStore.activeConnectionId,
+            diagramSchemas: [],
+          });
+        }
+      },
+      openTableDiff: () => {
+        if (connectionStore.activeConnectionId) {
+          tabStore.openTab({
+            type: 'tablediff',
+            title: 'Table Diff',
+            connectionId: connectionStore.activeConnectionId,
+          });
+        }
+      },
+      openDataDiff: () => {
+        if (connectionStore.activeConnectionId) {
+          tabStore.openTab({
+            type: 'datadiff',
+            title: 'Data Diff',
+            connectionId: connectionStore.activeConnectionId,
+          });
+        }
+      },
+      openVisualQuery: () => {
+        if (connectionStore.activeConnectionId) {
+          tabStore.openTab({
+            type: 'visualquery',
+            title: 'Visual Query',
+            connectionId: connectionStore.activeConnectionId,
+          });
+        }
+      },
     };
     for (const shortcut of DEFAULT_SHORTCUTS) {
       if (actionMap[shortcut.id]) {

@@ -39,7 +39,12 @@ src/                          # Frontend (SvelteKit)
 │   │   ├── sidebar/          # Sidebar, ConnectionList, SchemaTree, TreeNode, VirtualTreeList
 │   │   ├── structure/        # TableStructure, ColumnsView, IndexesView, ForeignKeysView
 │   │   ├── tabs/             # TabBar, TabContent, QueryTab, TableTab,
-│   │   │                     # DocumentTab, KeyValueTab, GraphTab
+│   │   │                     # DocumentTab, KeyValueTab, GraphTab,
+│   │   │                     # DiagramTab, TableDiffTab, DataDiffTab, VisualQueryTab
+│   │   ├── diagram/          # ERDiagramCanvas, DiagramToolbar, DiagramMinimap
+│   │   ├── diff/             # DiffConnectionPicker, ColumnsDiff, IndexesDiff,
+│   │   │                     # ForeignKeysDiff, DataDiffGrid
+│   │   ├── visualquery/      # VQCanvas, VQClausePanel, VQTablePicker
 │   │   ├── viewers/          # JsonViewer, KeyValueViewer
 │   │   ├── StatusBar.svelte
 │   │   └── Toolbar.svelte
@@ -59,8 +64,12 @@ src/                          # Frontend (SvelteKit)
 │   │   ├── database.ts       # DB_METADATA constant, DB_GROUPS
 │   │   ├── query.ts          # QueryResponse, CellValue, ColumnDef
 │   │   ├── schema.ts         # SQL-specific + generic (ContainerInfo, ItemInfo, FieldInfo)
-│   │   └── tabs.ts           # TabType: query | table | document | keyvalue | graph
-│   └── utils/                # formatters, sqlHelpers
+│   │   ├── tabs.ts           # TabType: query | table | document | keyvalue | graph | diagram | tablediff | datadiff | visualquery
+│   │   ├── diagram.ts        # DiagramTable, DiagramColumn, DiagramRelationship
+│   │   ├── diff.ts           # ColumnDiff, IndexDiff, ForeignKeyDiff, TableDiffResult, DataDiffResult
+│   │   └── visualQuery.ts    # VQTable, VQJoin, VQWhereClause, VQState
+│   └── utils/                # formatters, sqlHelpers, diagramLayout,
+│                             # schemaDiff, dataDiff, migrationGenerator, visualQueryBuilder
 ├── routes/
 │   ├── +page.svelte          # Main app layout
 │   └── +layout.svelte
@@ -197,6 +206,11 @@ npm run check            # TypeScript/Svelte type checking
 - Drag-fill cells — fill handle at bottom-right of selection, drag down/right to fill with detected pattern (repeat, arithmetic sequence, or cycle)
 - Find & replace in grid — Ctrl+F search bar with match highlighting, Ctrl+H replace mode, case-sensitive toggle, Replace/Replace All for editable grids
 - FK dropdowns — when editing a foreign key column, dropdown shows referenced values fetched via SELECT DISTINCT, with search filtering and keyboard navigation
+- ER diagram viewer — interactive SVG canvas showing tables with columns and FK relationship lines, pan/zoom/drag, table selection highlights connected FKs, fit-to-screen, export SVG, schema filter, minimap navigation
+- Visual query builder — drag-and-drop interface for building SELECT queries with JOINs/WHERE/GROUP BY/ORDER BY, column checkboxes for SELECT, join creation by clicking columns, real-time SQL preview, run results in inline grid
+- Table structure diff — compare columns/indexes/foreign keys between two connections/schemas, color-coded added/removed/changed status, detailed change descriptions
+- Migration generator — generates dialect-aware ALTER TABLE statements from table diff results (PostgreSQL, MySQL, MSSQL, SQLite), open in query tab or copy to clipboard
+- Data diff — compare row data across two connections matched by primary key, side-by-side source/target display, changed cell highlighting, filter by status (added/removed/changed/identical)
 
 ### Stub databases (feature-gated, not yet functional):
 - Oracle (`cargo build --features oracle` — requires Oracle Instant Client)
@@ -360,12 +374,12 @@ Separate repository — SvelteKit static site deployed to Vercel/Netlify/Cloudfl
 - [x] **Column-level copy**: Click column header to select and copy entire column
 - [x] **Foreign key dropdowns**: Show referenced values as dropdown options when editing FK columns
 
-### Phase 20: Visual Database Tools
-- [ ] **ER diagram viewer**: Interactive entity-relationship diagram showing table relationships with zoom/pan
-- [ ] **Visual query builder**: Drag-and-drop interface for constructing JOIN/WHERE/GROUP BY queries
-- [ ] **Table diff**: Compare table structure between two connections (dev vs prod)
-- [ ] **Data diff**: Compare row data between environments, highlight differences
-- [ ] **Migration generator**: Generate ALTER statements from schema diff between two databases
+### Phase 20: Visual Database Tools ✅
+- [x] **ER diagram viewer**: Interactive entity-relationship diagram showing table relationships with zoom/pan
+- [x] **Visual query builder**: Drag-and-drop interface for constructing JOIN/WHERE/GROUP BY queries
+- [x] **Table diff**: Compare table structure between two connections (dev vs prod)
+- [x] **Data diff**: Compare row data between environments, highlight differences
+- [x] **Migration generator**: Generate ALTER statements from schema diff between two databases
 
 ### Phase 21: Collaboration & Workflow
 - [ ] **Connection config export/import**: Export connection bundles as encrypted JSON, share with team
