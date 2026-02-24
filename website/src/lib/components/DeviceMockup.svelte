@@ -814,23 +814,72 @@
   /* === Responsive === */
   @media (max-width: 768px) {
     .app-body {
-      height: 220px;
+      height: 180px;
     }
 
     .sidebar {
-      width: 120px;
+      width: 100px;
     }
 
     .editor-line {
-      font-size: 8px;
+      font-size: 7px;
     }
 
     .laptop {
       max-width: 100%;
     }
 
+    .laptop-bezel {
+      padding: 14px 10px 10px;
+      border-radius: 10px 10px 0 0;
+    }
+
+    .laptop-camera {
+      top: 5px;
+      width: 4px;
+      height: 4px;
+    }
+
+    .laptop-hinge {
+      height: 5px;
+    }
+
     .laptop-base {
-      height: 56px;
+      height: 40px;
+    }
+
+    .key {
+      height: 5px;
+    }
+
+    .laptop-trackpad {
+      height: 7px;
+    }
+
+    .conn-name {
+      font-size: 8px;
+    }
+
+    .conn-badge {
+      font-size: 7px;
+      padding: 1px 3px;
+    }
+
+    .tree-item {
+      font-size: 9px;
+    }
+
+    .tab {
+      font-size: 8px;
+    }
+
+    .grid-header,
+    .grid-row {
+      font-size: 8px;
+    }
+
+    .status-bar {
+      font-size: 7px;
     }
 
     .tablet {
