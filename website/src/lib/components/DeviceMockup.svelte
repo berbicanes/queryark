@@ -4,112 +4,127 @@
 
 {#if type === 'laptop'}
   <div class="device laptop">
-    <div class="laptop-screen">
-      <div class="app-chrome">
-        <div class="traffic-lights">
-          <span class="dot red"></span>
-          <span class="dot yellow"></span>
-          <span class="dot green"></span>
+    <div class="laptop-lid">
+      <div class="laptop-bezel">
+        <div class="laptop-camera"></div>
+        <div class="laptop-screen">
+          <div class="app-chrome">
+            <div class="traffic-lights">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+            </div>
+            <span class="app-title">QueryArk</span>
+          </div>
+          <div class="app-body">
+            <div class="sidebar">
+              <div class="sidebar-header">
+                <span class="conn-badge">PG</span>
+                <span class="conn-name">Production PG</span>
+                <span class="conn-status"></span>
+              </div>
+              <div class="tree">
+                <div class="tree-item schema">
+                  <span class="arrow">&#9662;</span> public
+                </div>
+                <div class="tree-item table active">
+                  <span class="icon">&#9638;</span> users
+                </div>
+                <div class="tree-item table">
+                  <span class="icon">&#9638;</span> orders
+                </div>
+                <div class="tree-item table">
+                  <span class="icon">&#9638;</span> products
+                </div>
+                <div class="tree-item table">
+                  <span class="icon">&#9638;</span> payments
+                </div>
+              </div>
+            </div>
+            <div class="main-area">
+              <div class="tab-bar">
+                <span class="tab active">
+                  <span class="tab-badge">PG</span>
+                  Query 1
+                </span>
+                <span class="tab">users</span>
+              </div>
+              <div class="editor">
+                <div class="editor-line">
+                  <span class="ln">1</span>
+                  <span class="kw">SELECT</span> u.id, u.name, u.email, u.role
+                </div>
+                <div class="editor-line">
+                  <span class="ln">2</span>
+                  <span class="kw">FROM</span> users u
+                </div>
+                <div class="editor-line">
+                  <span class="ln">3</span>
+                  <span class="kw">JOIN</span> orders o <span class="kw">ON</span> o.user_id = u.id
+                </div>
+                <div class="editor-line">
+                  <span class="ln">4</span>
+                  <span class="kw">WHERE</span> u.active = <span class="bool">true</span>
+                </div>
+                <div class="editor-line">
+                  <span class="ln">5</span>
+                  <span class="kw">ORDER BY</span> u.name <span class="kw">ASC</span>;
+                </div>
+              </div>
+              <div class="grid">
+                <div class="grid-header">
+                  <span class="gh">id</span>
+                  <span class="gh">name</span>
+                  <span class="gh">email</span>
+                  <span class="gh">role</span>
+                </div>
+                <div class="grid-row">
+                  <span class="gc num">1</span>
+                  <span class="gc">Alice Chen</span>
+                  <span class="gc str">alice@example.com</span>
+                  <span class="gc">admin</span>
+                </div>
+                <div class="grid-row">
+                  <span class="gc num">2</span>
+                  <span class="gc">Bob Smith</span>
+                  <span class="gc str">bob@example.com</span>
+                  <span class="gc">editor</span>
+                </div>
+                <div class="grid-row">
+                  <span class="gc num">3</span>
+                  <span class="gc">Carol Diaz</span>
+                  <span class="gc str">carol@example.com</span>
+                  <span class="gc">viewer</span>
+                </div>
+                <div class="grid-row">
+                  <span class="gc num">4</span>
+                  <span class="gc">Dave Kim</span>
+                  <span class="gc str">dave@example.com</span>
+                  <span class="gc">editor</span>
+                </div>
+              </div>
+              <div class="status-bar">
+                <span class="status-connected">&#9679; Connected</span>
+                <span>localhost:5432</span>
+                <span class="status-right">4 rows &middot; 12ms</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <span class="app-title">QueryArk</span>
-      </div>
-      <div class="app-body">
-        <div class="sidebar">
-          <div class="sidebar-header">
-            <span class="conn-badge">PG</span>
-            <span class="conn-name">Production PG</span>
-            <span class="conn-status"></span>
-          </div>
-          <div class="tree">
-            <div class="tree-item schema">
-              <span class="arrow">&#9662;</span> public
-            </div>
-            <div class="tree-item table active">
-              <span class="icon">&#9638;</span> users
-            </div>
-            <div class="tree-item table">
-              <span class="icon">&#9638;</span> orders
-            </div>
-            <div class="tree-item table">
-              <span class="icon">&#9638;</span> products
-            </div>
-            <div class="tree-item table">
-              <span class="icon">&#9638;</span> payments
-            </div>
-          </div>
-        </div>
-        <div class="main-area">
-          <div class="tab-bar">
-            <span class="tab active">
-              <span class="tab-badge">PG</span>
-              Query 1
-            </span>
-            <span class="tab">users</span>
-          </div>
-          <div class="editor">
-            <div class="editor-line">
-              <span class="ln">1</span>
-              <span class="kw">SELECT</span> u.id, u.name, u.email, u.role
-            </div>
-            <div class="editor-line">
-              <span class="ln">2</span>
-              <span class="kw">FROM</span> users u
-            </div>
-            <div class="editor-line">
-              <span class="ln">3</span>
-              <span class="kw">JOIN</span> orders o <span class="kw">ON</span> o.user_id = u.id
-            </div>
-            <div class="editor-line">
-              <span class="ln">4</span>
-              <span class="kw">WHERE</span> u.active = <span class="bool">true</span>
-            </div>
-            <div class="editor-line">
-              <span class="ln">5</span>
-              <span class="kw">ORDER BY</span> u.name <span class="kw">ASC</span>;
-            </div>
-          </div>
-          <div class="grid">
-            <div class="grid-header">
-              <span class="gh">id</span>
-              <span class="gh">name</span>
-              <span class="gh">email</span>
-              <span class="gh">role</span>
-            </div>
-            <div class="grid-row">
-              <span class="gc num">1</span>
-              <span class="gc">Alice Chen</span>
-              <span class="gc str">alice@example.com</span>
-              <span class="gc">admin</span>
-            </div>
-            <div class="grid-row">
-              <span class="gc num">2</span>
-              <span class="gc">Bob Smith</span>
-              <span class="gc str">bob@example.com</span>
-              <span class="gc">editor</span>
-            </div>
-            <div class="grid-row">
-              <span class="gc num">3</span>
-              <span class="gc">Carol Diaz</span>
-              <span class="gc str">carol@example.com</span>
-              <span class="gc">viewer</span>
-            </div>
-            <div class="grid-row">
-              <span class="gc num">4</span>
-              <span class="gc">Dave Kim</span>
-              <span class="gc str">dave@example.com</span>
-              <span class="gc">editor</span>
-            </div>
-          </div>
-          <div class="status-bar">
-            <span class="status-connected">&#9679; Connected</span>
-            <span>localhost:5432</span>
-            <span class="status-right">4 rows &middot; 12ms</span>
-          </div>
-        </div>
+        <div class="screen-reflection"></div>
       </div>
     </div>
+    <div class="laptop-hinge"></div>
     <div class="laptop-base">
-      <div class="laptop-notch"></div>
+      <div class="laptop-keyboard">
+        <div class="keyboard-rows">
+          <div class="key-row">{#each Array(13) as _}<span class="key"></span>{/each}</div>
+          <div class="key-row">{#each Array(12) as _}<span class="key"></span>{/each}</div>
+          <div class="key-row">{#each Array(11) as _}<span class="key"></span>{/each}</div>
+          <div class="key-row"><span class="key spacebar"></span></div>
+        </div>
+      </div>
+      <div class="laptop-trackpad"></div>
     </div>
   </div>
 {:else if type === 'tablet'}
@@ -206,24 +221,24 @@
         <span class="phone-title">Connections</span>
       </div>
       <div class="phone-connections">
-        <div class="phone-card" style="--card-color: #7aa2f7">
-          <span class="phone-badge" style="background: rgba(122,162,247,0.2); color: #7aa2f7">PG</span>
+        <div class="phone-card" style="--card-color: #4a9eff">
+          <span class="phone-badge" style="background: rgba(74,158,255,0.2); color: #4a9eff">PG</span>
           <div class="phone-card-info">
             <span class="phone-card-name">Production PG</span>
             <span class="phone-card-host">db.example.com:5432</span>
           </div>
           <span class="phone-status connected"></span>
         </div>
-        <div class="phone-card" style="--card-color: #f9e2af">
-          <span class="phone-badge" style="background: rgba(249,226,175,0.2); color: #f9e2af">MY</span>
+        <div class="phone-card" style="--card-color: #fbbf24">
+          <span class="phone-badge" style="background: rgba(251,191,36,0.2); color: #fbbf24">MY</span>
           <div class="phone-card-info">
             <span class="phone-card-name">Staging MySQL</span>
             <span class="phone-card-host">staging.internal:3306</span>
           </div>
           <span class="phone-status"></span>
         </div>
-        <div class="phone-card" style="--card-color: #f38ba8">
-          <span class="phone-badge" style="background: rgba(243,139,168,0.2); color: #f38ba8">RD</span>
+        <div class="phone-card" style="--card-color: #f87171">
+          <span class="phone-badge" style="background: rgba(248,113,113,0.2); color: #f87171">RD</span>
           <div class="phone-card-info">
             <span class="phone-card-name">Cache Redis</span>
             <span class="phone-card-host">redis.internal:6379</span>
@@ -253,31 +268,124 @@
   /* === Laptop === */
   .laptop {
     width: 100%;
-    max-width: 720px;
+    max-width: 760px;
+    perspective: 1200px;
+  }
+
+  .laptop-lid {
+    position: relative;
+  }
+
+  .laptop-bezel {
+    position: relative;
+    background: linear-gradient(180deg, #2a2c32 0%, #1c1e24 100%);
+    padding: 20px 16px 16px;
+    border-radius: 14px 14px 0 0;
+    box-shadow:
+      0 -1px 0 rgba(255, 255, 255, 0.06) inset,
+      0 20px 60px rgba(0, 0, 0, 0.6),
+      0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+
+  .laptop-camera {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #1a1c22;
+    box-shadow: 0 0 0 1px #333640, 0 0 2px 1px rgba(74, 158, 255, 0.15);
   }
 
   .laptop-screen {
-    background: #1a1b2e;
-    border: 2px solid #3a3b54;
-    border-radius: 12px 12px 0 0;
+    background: #0f1117;
+    border-radius: 4px;
     overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    position: relative;
+  }
+
+  .screen-reflection {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      165deg,
+      rgba(255, 255, 255, 0.03) 0%,
+      transparent 40%,
+      transparent 100%
+    );
+    pointer-events: none;
+    border-radius: 4px;
+  }
+
+  .laptop-hinge {
+    height: 8px;
+    background: linear-gradient(180deg, #1a1c22 0%, #2a2c32 40%, #1a1c22 100%);
+    border-radius: 0;
+    margin: 0 2%;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   }
 
   .laptop-base {
-    background: linear-gradient(180deg, #3a3b54 0%, #2d2e48 100%);
-    height: 14px;
-    border-radius: 0 0 6px 6px;
+    background: linear-gradient(180deg, #2a2c32 0%, #22242a 60%, #1e2026 100%);
+    height: 72px;
+    border-radius: 0 0 8px 8px;
+    margin: 0 -2%;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.04) inset,
+      0 4px 12px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
   }
 
-  .laptop-notch {
-    width: 80px;
-    height: 5px;
-    background: #22233a;
-    border-radius: 0 0 4px 4px;
+  .laptop-keyboard {
+    width: 82%;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .keyboard-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .key-row {
+    display: flex;
+    gap: 2px;
+    justify-content: center;
+  }
+
+  .key {
+    flex: 1;
+    height: 7px;
+    background: linear-gradient(180deg, #383a42 0%, #2e3038 100%);
+    border-radius: 1.5px;
+    max-width: 28px;
+    box-shadow: 0 0.5px 0 rgba(0, 0, 0, 0.4);
+  }
+
+  .key.spacebar {
+    flex: 4;
+    max-width: 140px;
+  }
+
+  .laptop-trackpad {
+    width: 30%;
+    height: 10px;
+    background: linear-gradient(180deg, #2e3038 0%, #282a30 100%);
+    border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
   }
 
   .app-chrome {
@@ -285,8 +393,8 @@
     align-items: center;
     gap: 12px;
     padding: 8px 12px;
-    background: #22233a;
-    border-bottom: 1px solid #3a3b54;
+    background: #161821;
+    border-bottom: 1px solid #2a2d3a;
   }
 
   .traffic-lights {
@@ -300,14 +408,14 @@
     border-radius: 50%;
   }
 
-  .dot.red { background: #f38ba8; }
-  .dot.yellow { background: #f9e2af; }
-  .dot.green { background: #a6e3a1; }
+  .dot.red { background: #f87171; }
+  .dot.yellow { background: #fbbf24; }
+  .dot.green { background: #4ade80; }
 
   .app-title {
     font-size: 11px;
     font-weight: 600;
-    color: #6c7086;
+    color: #5c6070;
   }
 
   .app-body {
@@ -318,8 +426,8 @@
   /* Sidebar */
   .sidebar {
     width: 160px;
-    background: #22233a;
-    border-right: 1px solid #3a3b54;
+    background: #161821;
+    border-right: 1px solid #2a2d3a;
     flex-shrink: 0;
     overflow: hidden;
   }
@@ -329,7 +437,7 @@
     align-items: center;
     gap: 6px;
     padding: 8px 10px;
-    border-bottom: 1px solid #3a3b54;
+    border-bottom: 1px solid #2a2d3a;
   }
 
   .conn-badge {
@@ -337,14 +445,14 @@
     font-weight: 700;
     padding: 2px 5px;
     border-radius: 3px;
-    background: rgba(122, 162, 247, 0.2);
-    color: #7aa2f7;
+    background: rgba(74, 158, 255, 0.2);
+    color: #4a9eff;
   }
 
   .conn-name {
     font-size: 10px;
     font-weight: 600;
-    color: #d0d8f4;
+    color: #e4e6ef;
     flex: 1;
     white-space: nowrap;
     overflow: hidden;
@@ -355,8 +463,8 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #a6e3a1;
-    box-shadow: 0 0 4px rgba(166, 227, 161, 0.5);
+    background: #4ade80;
+    box-shadow: 0 0 4px rgba(74, 222, 128, 0.5);
     flex-shrink: 0;
   }
 
@@ -367,7 +475,7 @@
   .tree-item {
     padding: 3px 10px 3px 12px;
     font-size: 10px;
-    color: #a6adc8;
+    color: #9ca0b0;
     display: flex;
     align-items: center;
     gap: 4px;
@@ -375,7 +483,7 @@
   }
 
   .tree-item.schema {
-    color: #d0d8f4;
+    color: #e4e6ef;
     font-weight: 600;
   }
 
@@ -384,18 +492,18 @@
   }
 
   .tree-item.active {
-    background: rgba(122, 162, 247, 0.1);
-    color: #7aa2f7;
+    background: rgba(74, 158, 255, 0.1);
+    color: #4a9eff;
   }
 
   .arrow {
     font-size: 7px;
-    color: #6c7086;
+    color: #5c6070;
   }
 
   .icon {
     font-size: 6px;
-    color: #6c7086;
+    color: #5c6070;
   }
 
   /* Main area */
@@ -409,15 +517,15 @@
   .tab-bar {
     display: flex;
     gap: 0;
-    background: #22233a;
-    border-bottom: 1px solid #3a3b54;
+    background: #161821;
+    border-bottom: 1px solid #2a2d3a;
     padding: 0 4px;
   }
 
   .tab {
     padding: 5px 12px;
     font-size: 9px;
-    color: #6c7086;
+    color: #5c6070;
     border-bottom: 2px solid transparent;
     display: flex;
     align-items: center;
@@ -425,8 +533,8 @@
   }
 
   .tab.active {
-    color: #d0d8f4;
-    border-bottom-color: #7aa2f7;
+    color: #e4e6ef;
+    border-bottom-color: #4a9eff;
   }
 
   .tab-badge {
@@ -434,16 +542,16 @@
     font-weight: 700;
     padding: 1px 4px;
     border-radius: 2px;
-    background: rgba(122, 162, 247, 0.2);
-    color: #7aa2f7;
+    background: rgba(74, 158, 255, 0.2);
+    color: #4a9eff;
   }
 
   /* Editor */
   .editor {
     padding: 8px 0;
-    background: #1a1b2e;
+    background: #0f1117;
     flex-shrink: 0;
-    border-bottom: 1px solid #3a3b54;
+    border-bottom: 1px solid #2a2d3a;
   }
 
   .editor-line {
@@ -451,7 +559,7 @@
     font-family: var(--font-mono);
     font-size: 9.5px;
     line-height: 1.6;
-    color: #d0d8f4;
+    color: #e4e6ef;
     white-space: nowrap;
     overflow: hidden;
   }
@@ -460,15 +568,15 @@
     display: inline-block;
     width: 16px;
     text-align: right;
-    color: #3a3b54;
+    color: #2a2d3a;
     margin-right: 10px;
     font-size: 8px;
   }
 
-  .kw { color: #7aa2f7; }
-  .str { color: #a6e3a1; }
-  .num { color: #f9e2af; }
-  .bool { color: #f9e2af; }
+  .kw { color: #4a9eff; }
+  .str { color: #4ade80; }
+  .num { color: #fbbf24; }
+  .bool { color: #fbbf24; }
 
   /* Grid */
   .grid {
@@ -481,10 +589,10 @@
     display: grid;
     grid-template-columns: 40px 1fr 1fr 80px;
     padding: 4px 10px;
-    background: #22233a;
-    border-bottom: 1px solid #3a3b54;
+    background: #161821;
+    border-bottom: 1px solid #2a2d3a;
     font-weight: 600;
-    color: #a6adc8;
+    color: #9ca0b0;
   }
 
   .gh {
@@ -498,12 +606,12 @@
     display: grid;
     grid-template-columns: 40px 1fr 1fr 80px;
     padding: 3px 10px;
-    border-bottom: 1px solid rgba(58, 59, 84, 0.5);
-    color: #d0d8f4;
+    border-bottom: 1px solid rgba(42, 45, 58, 0.5);
+    color: #e4e6ef;
   }
 
   .grid-row:hover {
-    background: rgba(122, 162, 247, 0.05);
+    background: rgba(74, 158, 255, 0.05);
   }
 
   .gc {
@@ -513,8 +621,8 @@
     text-overflow: ellipsis;
   }
 
-  .gc.num { color: #f9e2af; }
-  .gc.str { color: #a6e3a1; }
+  .gc.num { color: #fbbf24; }
+  .gc.str { color: #4ade80; }
 
   /* Status bar */
   .status-bar {
@@ -522,14 +630,14 @@
     align-items: center;
     gap: 12px;
     padding: 4px 10px;
-    background: #22233a;
-    border-top: 1px solid #3a3b54;
+    background: #161821;
+    border-top: 1px solid #2a2d3a;
     font-size: 8px;
-    color: #6c7086;
+    color: #5c6070;
   }
 
   .status-connected {
-    color: #a6e3a1;
+    color: #4ade80;
   }
 
   .status-right {
@@ -543,8 +651,8 @@
   }
 
   .tablet-screen {
-    background: #1a1b2e;
-    border: 2px solid #3a3b54;
+    background: #0f1117;
+    border: 2px solid #2a2d3a;
     border-radius: 16px;
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
@@ -576,10 +684,10 @@
     align-items: center;
     justify-content: space-between;
     padding: 6px 10px;
-    background: #22233a;
-    border-top: 1px solid #3a3b54;
+    background: #161821;
+    border-top: 1px solid #2a2d3a;
     font-size: 8px;
-    color: #6c7086;
+    color: #5c6070;
   }
 
   .page-btns {
@@ -589,14 +697,14 @@
 
   .page-btn {
     padding: 2px 6px;
-    background: #2d2e48;
+    background: #1e2028;
     border-radius: 3px;
-    color: #a6adc8;
+    color: #9ca0b0;
     font-size: 8px;
   }
 
   .page-btn.active {
-    background: #7aa2f7;
+    background: #4a9eff;
     color: #fff;
   }
 
@@ -611,8 +719,8 @@
   }
 
   .phone-screen {
-    background: #1a1b2e;
-    border: 2px solid #3a3b54;
+    background: #0f1117;
+    border: 2px solid #2a2d3a;
     border-radius: 24px;
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
@@ -625,12 +733,12 @@
     padding: 8px 16px 4px;
     font-size: 10px;
     font-weight: 600;
-    color: #d0d8f4;
+    color: #e4e6ef;
   }
 
   .phone-icons {
     font-size: 8px;
-    color: #6c7086;
+    color: #5c6070;
     letter-spacing: -1px;
   }
 
@@ -641,7 +749,7 @@
   .phone-title {
     font-size: 18px;
     font-weight: 700;
-    color: #d0d8f4;
+    color: #e4e6ef;
   }
 
   .phone-connections {
@@ -656,10 +764,10 @@
     align-items: center;
     gap: 10px;
     padding: 12px;
-    background: #22233a;
-    border: 1px solid #3a3b54;
+    background: #161821;
+    border: 1px solid #2a2d3a;
     border-radius: 10px;
-    border-left: 3px solid var(--card-color, #7aa2f7);
+    border-left: 3px solid var(--card-color, #4a9eff);
   }
 
   .phone-badge {
@@ -679,14 +787,14 @@
     display: block;
     font-size: 11px;
     font-weight: 600;
-    color: #d0d8f4;
+    color: #e4e6ef;
   }
 
   .phone-card-host {
     display: block;
     font-size: 9px;
     font-family: var(--font-mono);
-    color: #6c7086;
+    color: #5c6070;
     margin-top: 2px;
   }
 
@@ -694,13 +802,13 @@
     width: 7px;
     height: 7px;
     border-radius: 50%;
-    background: #3a3b54;
+    background: #2a2d3a;
     flex-shrink: 0;
   }
 
   .phone-status.connected {
-    background: #a6e3a1;
-    box-shadow: 0 0 6px rgba(166, 227, 161, 0.5);
+    background: #4ade80;
+    box-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
   }
 
   /* === Responsive === */
@@ -719,6 +827,10 @@
 
     .laptop {
       max-width: 100%;
+    }
+
+    .laptop-base {
+      height: 56px;
     }
 
     .tablet {

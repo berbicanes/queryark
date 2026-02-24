@@ -77,7 +77,7 @@
   .cta {
     text-align: center;
     border-top: 1px solid var(--border-color);
-    background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(122, 162, 247, 0.06) 0%, transparent 70%);
+    background: radial-gradient(ellipse 60% 50% at 50% 50%, rgba(74, 158, 255, 0.06) 0%, transparent 70%);
   }
 
   .cta-content {

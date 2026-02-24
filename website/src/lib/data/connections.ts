@@ -12,7 +12,7 @@ export const connectionGuides: ConnectionGuide[] = [
   {
     name: 'PostgreSQL',
     badge: 'PG',
-    color: '#7aa2f7',
+    color: '#4a9eff',
     defaultPort: 5432,
     requiredFields: ['Host', 'Port', 'Database', 'Username', 'Password'],
     exampleUrl: 'postgres://user:pass@localhost:5432/mydb',
@@ -21,7 +21,7 @@ export const connectionGuides: ConnectionGuide[] = [
   {
     name: 'MySQL',
     badge: 'MY',
-    color: '#f9e2af',
+    color: '#fbbf24',
     defaultPort: 3306,
     requiredFields: ['Host', 'Port', 'Database', 'Username', 'Password'],
     exampleUrl: 'mysql://user:pass@localhost:3306/mydb',
@@ -48,7 +48,7 @@ export const connectionGuides: ConnectionGuide[] = [
   {
     name: 'SQL Server',
     badge: 'MS',
-    color: '#f38ba8',
+    color: '#f87171',
     defaultPort: 1433,
     requiredFields: ['Host', 'Port', 'Database', 'Username', 'Password'],
     exampleUrl: 'mssql://user:pass@localhost:1433/mydb',
@@ -57,7 +57,7 @@ export const connectionGuides: ConnectionGuide[] = [
   {
     name: 'CockroachDB',
     badge: 'CR',
-    color: '#a6e3a1',
+    color: '#4ade80',
     defaultPort: 26257,
     requiredFields: ['Host', 'Port', 'Database', 'Username', 'Password'],
     exampleUrl: 'postgres://user:pass@localhost:26257/defaultdb',
@@ -66,7 +66,7 @@ export const connectionGuides: ConnectionGuide[] = [
   {
     name: 'Redshift',
     badge: 'RS',
-    color: '#f38ba8',
+    color: '#f87171',
     defaultPort: 5439,
     requiredFields: ['Host', 'Port', 'Database', 'Username', 'Password'],
     exampleUrl: 'postgres://user:pass@cluster.redshift.amazonaws.com:5439/dev',
@@ -75,7 +75,7 @@ export const connectionGuides: ConnectionGuide[] = [
   {
     name: 'ClickHouse',
     badge: 'CH',
-    color: '#f9e2af',
+    color: '#fbbf24',
     defaultPort: 8123,
     requiredFields: ['Host', 'Port', 'Database', 'Username', 'Password'],
     exampleUrl: 'http://localhost:8123/?database=default',
@@ -102,7 +102,7 @@ export const connectionGuides: ConnectionGuide[] = [
   {
     name: 'MongoDB',
     badge: 'MO',
-    color: '#a6e3a1',
+    color: '#4ade80',
     defaultPort: 27017,
     requiredFields: ['Host', 'Port', 'Database', 'Username', 'Password'],
     exampleUrl: 'mongodb://user:pass@localhost:27017/mydb',
@@ -111,7 +111,7 @@ export const connectionGuides: ConnectionGuide[] = [
   {
     name: 'Redis',
     badge: 'RD',
-    color: '#f38ba8',
+    color: '#f87171',
     defaultPort: 6379,
     requiredFields: ['Host', 'Port'],
     exampleUrl: 'redis://localhost:6379',
@@ -147,7 +147,7 @@ export const connectionGuides: ConnectionGuide[] = [
   {
     name: 'DynamoDB',
     badge: 'DY',
-    color: '#f9e2af',
+    color: '#fbbf24',
     defaultPort: null,
     requiredFields: ['AWS Region', 'Access Key ID', 'Secret Access Key'],
     exampleUrl: 'dynamodb://us-east-1',

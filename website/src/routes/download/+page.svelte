@@ -50,6 +50,9 @@
 <style>
   .download-page {
     padding: 140px 0 100px;
+    background: rgba(15, 17, 23, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   .page-header {
@@ -64,8 +67,8 @@
     font-weight: 600;
     font-family: var(--font-mono);
     color: var(--accent);
-    background: rgba(122, 162, 247, 0.1);
-    border: 1px solid rgba(122, 162, 247, 0.2);
+    background: rgba(74, 158, 255, 0.1);
+    border: 1px solid rgba(74, 158, 255, 0.2);
     border-radius: 20px;
     margin-bottom: 20px;
   }

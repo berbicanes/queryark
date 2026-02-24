@@ -37,6 +37,9 @@
     position: relative;
     padding: 160px 0 100px;
     overflow: hidden;
+    background: rgba(15, 17, 23, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   .hero-glow {
@@ -46,7 +49,7 @@
     transform: translateX(-50%);
     width: 1000px;
     height: 600px;
-    background: radial-gradient(ellipse, rgba(122, 162, 247, 0.08) 0%, transparent 70%);
+    background: radial-gradient(ellipse, rgba(74, 158, 255, 0.08) 0%, transparent 70%);
     pointer-events: none;
   }
 
@@ -97,8 +100,9 @@
 
   .hero-meta {
     margin-top: 16px;
-    font-size: 13px;
-    color: var(--text-muted);
+    font-size: 15px;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
   }
 
   .hero-mockup {

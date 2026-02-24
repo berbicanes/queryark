@@ -52,7 +52,10 @@
   .feature-number {
     font-size: 48px;
     font-weight: 900;
-    color: var(--bg-tertiary);
+    background: linear-gradient(135deg, #4a9eff 0%, rgba(255, 255, 255, 0.7) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
     letter-spacing: -2px;
     line-height: 1;
     margin-bottom: 8px;

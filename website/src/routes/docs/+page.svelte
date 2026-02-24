@@ -210,6 +210,9 @@
 <style>
   .docs-page {
     padding: 120px 0 100px;
+    background: rgba(15, 17, 23, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   .docs-layout {
@@ -229,14 +232,14 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    border-left: 2px solid var(--border-color);
+    border-left: 2px solid var(--bg-hover);
     padding-left: 16px;
   }
 
   .sidebar-link {
     font-size: 13px;
     font-weight: 500;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     text-decoration: none;
     padding: 6px 0;
     transition: color 200ms ease;
@@ -293,8 +296,8 @@
     font-size: 15px;
     font-weight: 700;
     color: var(--accent);
-    background: rgba(122, 162, 247, 0.1);
-    border: 1px solid rgba(122, 162, 247, 0.2);
+    background: rgba(74, 158, 255, 0.1);
+    border: 1px solid rgba(74, 158, 255, 0.2);
     border-radius: 50%;
   }
 

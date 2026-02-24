@@ -83,10 +83,10 @@
 
   function platformColor(platform: string): string {
     switch (platform) {
-      case 'macOS': return '#a6e3a1';
-      case 'Windows': return '#7aa2f7';
-      case 'Linux': return '#f9e2af';
-      default: return '#6c7086';
+      case 'macOS': return '#4ade80';
+      case 'Windows': return '#4a9eff';
+      case 'Linux': return '#fbbf24';
+      default: return '#5c6070';
     }
   }
 
@@ -479,8 +479,8 @@
     padding: 14px 20px;
     font-size: 14px;
     color: var(--error);
-    background: rgba(243, 139, 168, 0.08);
-    border: 1px solid rgba(243, 139, 168, 0.2);
+    background: rgba(248, 113, 113, 0.08);
+    border: 1px solid rgba(248, 113, 113, 0.2);
     border-radius: var(--radius-lg);
     margin-bottom: 32px;
   }
@@ -720,7 +720,7 @@
     padding: 2px 8px;
     border-radius: 10px;
     color: var(--warning);
-    background: rgba(249, 226, 175, 0.1);
+    background: rgba(251, 191, 36, 0.1);
   }
 
   .release-date {

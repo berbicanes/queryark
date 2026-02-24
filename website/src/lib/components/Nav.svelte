@@ -19,7 +19,7 @@
   <div class="nav-inner container">
     <a href="/" class="nav-brand" onclick={closeMobile}>
       <svg class="brand-icon" width="28" height="28" viewBox="0 0 36 36" fill="none">
-        <ellipse cx="18" cy="10" rx="12" ry="5" stroke="var(--accent)" stroke-width="2" fill="rgba(122, 162, 247, 0.12)"/>
+        <ellipse cx="18" cy="10" rx="12" ry="5" stroke="var(--accent)" stroke-width="2" fill="rgba(74, 158, 255, 0.12)"/>
         <path d="M6 10v8c0 2.76 5.37 5 12 5s12-2.24 12-5v-8" stroke="var(--accent)" stroke-width="2" fill="none"/>
         <path d="M6 18v8c0 2.76 5.37 5 12 5s12-2.24 12-5v-8" stroke="var(--accent)" stroke-width="2" fill="none" opacity="0.6"/>
       </svg>
@@ -54,7 +54,7 @@
   }
 
   .nav.scrolled {
-    background: rgba(26, 27, 46, 0.85);
+    background: rgba(15, 17, 23, 0.85);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     padding: 12px 0;
@@ -76,7 +76,7 @@
   }
 
   .brand-icon {
-    filter: drop-shadow(0 0 8px rgba(122, 162, 247, 0.3));
+    filter: drop-shadow(0 0 8px rgba(74, 158, 255, 0.3));
   }
 
   .brand-text {
@@ -150,7 +150,7 @@
       right: 0;
       flex-direction: column;
       gap: 0;
-      background: rgba(26, 27, 46, 0.95);
+      background: rgba(15, 17, 23, 0.95);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border-bottom: 1px solid var(--border-color);

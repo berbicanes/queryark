@@ -3,7 +3,7 @@
     <div class="footer-brand">
       <div class="brand-row">
         <svg width="24" height="24" viewBox="0 0 36 36" fill="none">
-          <ellipse cx="18" cy="10" rx="12" ry="5" stroke="var(--accent)" stroke-width="2" fill="rgba(122, 162, 247, 0.12)"/>
+          <ellipse cx="18" cy="10" rx="12" ry="5" stroke="var(--accent)" stroke-width="2" fill="rgba(74, 158, 255, 0.12)"/>
           <path d="M6 10v8c0 2.76 5.37 5 12 5s12-2.24 12-5v-8" stroke="var(--accent)" stroke-width="2" fill="none"/>
           <path d="M6 18v8c0 2.76 5.37 5 12 5s12-2.24 12-5v-8" stroke="var(--accent)" stroke-width="2" fill="none" opacity="0.6"/>
         </svg>
@@ -39,7 +39,9 @@
   .footer {
     border-top: 1px solid var(--border-color);
     padding: 64px 0 0;
-    background: var(--bg-secondary);
+    background: rgba(15, 17, 23, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   .footer-inner {
